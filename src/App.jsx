@@ -9,24 +9,9 @@ import FillBlanksPage from './pages/FillBlanksPage'
 import NextReadPage from './pages/NextReadPage'
 import StatsPage from './pages/StatsPage'
 
-async function seedLibrary(uid) {
-  const { count } = await supabase.from('user_books').select('*', { count: 'exact', head: true }).eq('user_id', uid)
-  if (count > 0) return
-  const { data: books } = await supabase.from('books').select('id')
-  if (!books?.length) return
-  const BATCH = 100
-  for (let i = 0; i < books.length; i += BATCH) {
-    await supabase.from('user_books').insert(
-      books.slice(i, i + BATCH).map(b => ({ user_id: uid, book_id: b.id })),
-      { ignoreDuplicates: true }
-    )
-  }
-}
-
 export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [seeding, setSeeding] = useState(false)
   const [page, setPage] = useState('home')
   const [pageData, setPageData] = useState(null)
   const [theme, setTheme] = useState(() => localStorage.getItem('sl-theme') || 'dark')
@@ -37,31 +22,19 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        setSeeding(true)
-        await seedLibrary(session.user.id)
-        setSeeding(false)
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      if (s) {
-        setSeeding(true)
-        await seedLibrary(s.user.id)
-        setSeeding(false)
-      }
-      setSession(s)
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
   const navigate = (p, data = null) => { setPage(p); setPageData(data); window.scrollTo(0, 0) }
 
-  if (loading || seeding) return (
+  if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh" }}>
-      <div style={{ fontFamily:"var(--font-serif)", fontSize:20, color:"var(--text2)" }}>{seeding ? "Stocking the shelves…" : "Opening the library…"}</div>
+      <div style={{ fontFamily:"var(--font-serif)", fontSize:20, color:"var(--text2)" }}>Opening the library…</div>
     </div>
   )
 
