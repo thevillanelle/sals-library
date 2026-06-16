@@ -5,7 +5,7 @@ import { HelpCircle, ChevronRight, Check, Flame, SkipForward } from 'lucide-reac
 
 const FIELDS = [
   { key: 'rating',       label: 'Rating',             prompt: 'How many stars?',                   type: 'rating' },
-  { key: 'one_thing',    label: 'One thing',           prompt: 'What's the one thing you'll remember?', type: 'text' },
+  { key: 'one_thing',    label: 'One thing',           prompt: "What's the one thing you'll remember?", type: 'text' },
   { key: 'best_moment',  label: 'Best moment',         prompt: 'Was there a best scene or moment?',  type: 'text' },
   { key: 'give_to',      label: 'Who would you give it to?', prompt: 'Who would you hand this to?',   type: 'text' },
   { key: 'recommend',    label: 'Recommend?',          prompt: 'Would you recommend it?',            type: 'recommend' },
