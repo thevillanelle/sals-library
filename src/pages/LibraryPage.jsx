@@ -255,54 +255,97 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
 
   const filterActive = search || filterStatus || filterRating || filterAuthor
   const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterRating(''); setFilterAuthor('') }
-  const inputStyle = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '9px 12px', color: 'var(--text)', fontSize: 14, outline: 'none' }
-  const btnStyle = (active) => ({ background: active ? 'var(--gold-pale)' : 'var(--bg2)', border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '8px 14px', color: active ? 'var(--gold)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, transition: 'all 0.15s' })
+
+  const selectStyle = {
+    background: 'var(--bg2)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: '0 32px 0 12px',
+    height: 38,
+    color: 'var(--text)',
+    fontSize: 13,
+    outline: 'none',
+    cursor: 'pointer',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    flexShrink: 0,
+  }
+
+  const iconBtnStyle = (active) => ({
+    background: active ? 'var(--gold-pale)' : 'var(--bg2)',
+    border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+    borderRadius: 'var(--radius)',
+    width: 38, height: 38,
+    color: active ? 'var(--gold)' : 'var(--text3)',
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'all 0.15s',
+    flexShrink: 0,
+  })
 
   return (
     <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}>
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>The Library</h1>
-            <p style={{ color: 'var(--text2)', fontSize: 15 }}>{loading ? '…' : `${total.toLocaleString()} book${total !== 1 ? 's' : ''}`}</p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setGroupSeries(g => !g)} style={btnStyle(groupSeries)}>
-              <Layers size={15} /> By series
-            </button>
-            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} style={btnStyle(false)}>
-              {view === 'grid' ? <List size={15} /> : <Grid size={15} />}
-              {view === 'grid' ? 'List' : 'Grid'}
-            </button>
-            <button onClick={exportExcel} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}>
-              <Download size={15} /> Export
-            </button>
-          </div>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>The Library</h1>
+          <p style={{ color: 'var(--text2)', fontSize: 15 }}>{loading ? '…' : `${total.toLocaleString()} book${total !== 1 ? 's' : ''}`}</p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flexGrow: 1, minWidth: 200 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, author, or series…"
-              style={{ ...inputStyle, paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
+          {/* Search */}
+          <div style={{ position: 'relative', flexGrow: 1, minWidth: 180 }}>
+            <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
+              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', height: 38, paddingLeft: 32, paddingRight: 12, color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
           </div>
-          <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+
+          {/* Sort */}
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...selectStyle, minWidth: 140 }}>
             {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            <option value="">All statuses</option>
+
+          {/* Status */}
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...selectStyle, minWidth: 110, color: filterStatus ? 'var(--gold)' : 'var(--text)', borderColor: filterStatus ? 'var(--gold)' : 'var(--border)' }}>
+            <option value="">Status</option>
             {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
-          <select value={filterRating} onChange={e => setFilterRating(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            <option value="">Any rating</option>
+
+          {/* Rating */}
+          <select value={filterRating} onChange={e => setFilterRating(e.target.value)} style={{ ...selectStyle, minWidth: 100, color: filterRating ? 'var(--gold)' : 'var(--text)', borderColor: filterRating ? 'var(--gold)' : 'var(--border)' }}>
+            <option value="">Rating</option>
             {[3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)}+</option>)}
           </select>
-          <select value={filterAuthor} onChange={e => setFilterAuthor(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            <option value="">All authors</option>
+
+          {/* Author */}
+          <select value={filterAuthor} onChange={e => setFilterAuthor(e.target.value)} style={{ ...selectStyle, minWidth: 130, color: filterAuthor ? 'var(--gold)' : 'var(--text)', borderColor: filterAuthor ? 'var(--gold)' : 'var(--border)' }}>
+            <option value="">Author</option>
             {authors.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0 }} />
+
+          {/* By series toggle */}
+          <button onClick={() => setGroupSeries(g => !g)} title="Group by series" style={iconBtnStyle(groupSeries)}>
+            <Layers size={15} />
+          </button>
+
+          {/* Grid / List toggle */}
+          <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(false)}>
+            {view === 'grid' ? <List size={15} /> : <Grid size={15} />}
+          </button>
+
+          {/* Export */}
+          <button onClick={exportExcel} title="Export to Excel"
+            style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', width: 38, height: 38, color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Download size={15} />
+          </button>
+
           {filterActive && (
-            <button onClick={clearFilters} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text3)' }}>
+            <button onClick={clearFilters} title="Clear filters"
+              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', height: 38, padding: '0 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text3)', fontSize: 13, flexShrink: 0 }}>
               <X size={13} /> Clear
             </button>
           )}
