@@ -43,9 +43,9 @@ function BookCard({ book, view, onClick }) {
           <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: ub?.one_thing ? 4 : 0 }}>
             {author}{book.series ? ` · ${book.series}${book.series_num ? ` #${book.series_num}` : ''}` : ''}
           </div>
-          {ub?.one_thing && (
-            <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              "{ub.one_thing}"
+          {(book.summary || ub?.one_thing) && (
+            <div style={{ fontSize: 12, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: ub?.one_thing && !book.summary ? 'italic' : 'normal' }}>
+              {ub?.one_thing && !book.summary ? `"${ub.one_thing}"` : book.summary}
             </div>
           )}
         </div>
@@ -67,9 +67,9 @@ function BookCard({ book, view, onClick }) {
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.35 }}>{book.title}</div>
       <div style={{ fontSize: 12, color: 'var(--text2)' }}>{author}</div>
       {book.series && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</div>}
-      {ub?.one_thing && (
-        <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 2 }}>
-          "{ub.one_thing}"
+      {(book.summary || ub?.one_thing) && (
+        <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 2, fontStyle: ub?.one_thing && !book.summary ? 'italic' : 'normal' }}>
+          {ub?.one_thing && !book.summary ? `"${ub.one_thing}"` : book.summary}
         </div>
       )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 6 }}>
@@ -134,6 +134,7 @@ function BookModal({ book, onClose }) {
         <p style={{ color: 'var(--text2)', marginBottom: 4 }}>{author}</p>
         {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 4 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {book.summary && <DetailRow label="About" value={book.summary} />}
           {ub.status && <DetailRow label="Status" value={statusLabels[ub.status] || ub.status} />}
           {ub.rating && <DetailRow label="Rating" value={<Stars rating={ub.rating} />} />}
           {ub.date_read && <DetailRow label="Date read" value={new Date(ub.date_read).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} />}
