@@ -2,18 +2,27 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import * as XLSX from 'xlsx'
-import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X } from 'lucide-react'
-
-const PAGE_SIZE = 24
+import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, ArrowUpDown } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const statusColors = { read: '#7a9e8a', 'want-to-read': '#8a7eb8', reading: '#6a9ab0', dnf: '#b87a5a' }
+const PAGE_SIZE = 24
+
+const SORT_OPTIONS = [
+  { value: 'author_asc',  label: 'Author A → Z' },
+  { value: 'author_desc', label: 'Author Z → A' },
+  { value: 'title_asc',   label: 'Title A → Z' },
+  { value: 'title_desc',  label: 'Title Z → A' },
+  { value: 'rating_desc', label: 'Rating ↓' },
+  { value: 'rating_asc',  label: 'Rating ↑' },
+  { value: 'series_asc',  label: 'Series A → Z' },
+]
 
 function Stars({ rating }) {
-  if (!rating) return <span style={{ color: 'var(--text3)', fontSize: 12 }}>—</span>
+  if (!rating) return null
   return (
     <span style={{ display: 'flex', gap: 2 }}>
-      {[1, 2, 3, 4, 5].map(i => (
+      {[1, 2, 3].map(i => (
         <Star key={i} size={11} fill={i <= rating ? 'var(--gold)' : 'none'} color={i <= rating ? 'var(--gold)' : 'var(--text3)'} />
       ))}
     </span>
@@ -28,28 +37,42 @@ function BookCard({ book, view, onClick }) {
   if (view === 'list') {
     return (
       <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
-        style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '14px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{book.title}</div>
-          <div style={{ fontSize: 13, color: 'var(--text2)' }}>{author}{book.series ? ` · ${book.series}${book.series_num ? ` #${book.series_num}` : ''}` : ''}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{book.title}</div>
+          <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: ub?.one_thing ? 4 : 0 }}>
+            {author}{book.series ? ` · ${book.series}${book.series_num ? ` #${book.series_num}` : ''}` : ''}
+          </div>
+          {ub?.one_thing && (
+            <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              "{ub.one_thing}"
+            </div>
+          )}
         </div>
-        <Stars rating={ub?.rating} />
-        {ub?.status && (
-          <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: (statusColors[ub.status] || 'var(--gold)') + '20', color: statusColors[ub.status] || 'var(--gold)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {statusLabels[ub.status] || ub.status}
-          </span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <Stars rating={ub?.rating} />
+          {ub?.status && (
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: (statusColors[ub.status] || 'var(--gold)') + '20', color: statusColors[ub.status] || 'var(--gold)', whiteSpace: 'nowrap' }}>
+              {statusLabels[ub.status] || ub.status}
+            </span>
+          )}
+        </div>
       </div>
     )
   }
 
   return (
     <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
-      style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--border2)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', padding: '20px 18px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.35, flexGrow: 1 }}>{book.title}</div>
+      style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--border2)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', padding: '20px 18px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.35 }}>{book.title}</div>
       <div style={{ fontSize: 12, color: 'var(--text2)' }}>{author}</div>
       {book.series && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</div>}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+      {ub?.one_thing && (
+        <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 2 }}>
+          "{ub.one_thing}"
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 6 }}>
         <Stars rating={ub?.rating} />
         {ub?.status && (
           <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: (statusColors[ub.status] || 'var(--gold)') + '20', color: statusColors[ub.status] || 'var(--gold)' }}>
@@ -57,6 +80,30 @@ function BookCard({ book, view, onClick }) {
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+function SeriesGroup({ seriesName, books, view, onSelect }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 10, padding: 0, width: '100%', textAlign: 'left' }}>
+        <div style={{ height: 1, background: 'var(--border)', flexGrow: 1 }} />
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--gold)', whiteSpace: 'nowrap', padding: '0 12px' }}>
+          {seriesName} <span style={{ color: 'var(--text3)', fontFamily: 'var(--font-sans)', fontSize: 12 }}>({books.length})</span>
+        </span>
+        <div style={{ height: 1, background: 'var(--border)', flexGrow: 1 }} />
+        <span style={{ color: 'var(--text3)', fontSize: 11, paddingLeft: 8 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={view === 'grid'
+          ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
+          : { display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {books.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => onSelect(book)} />)}
+        </div>
+      )}
     </div>
   )
 }
@@ -74,19 +121,15 @@ function DetailRow({ label, value }) {
 function BookModal({ book, onClose }) {
   const ub = book.user_books?.[0] || {}
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
-
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
-
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-lg)', padding: 32, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer' }}>
-          <X size={18} />
-        </button>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer' }}><X size={18} /></button>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 400, marginBottom: 4, paddingRight: 24 }}>{book.title}</h2>
         <p style={{ color: 'var(--text2)', marginBottom: 4 }}>{author}</p>
         {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 4 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
@@ -106,8 +149,42 @@ function BookModal({ book, onClose }) {
   )
 }
 
+function sortBooks(books, sortKey) {
+  const sorted = [...books]
+  switch (sortKey) {
+    case 'author_asc':  return sorted.sort((a, b) => (a.author_last || '').localeCompare(b.author_last || '') || (a.author_first || '').localeCompare(b.author_first || '') || a.title.localeCompare(b.title))
+    case 'author_desc': return sorted.sort((a, b) => (b.author_last || '').localeCompare(a.author_last || '') || a.title.localeCompare(b.title))
+    case 'title_asc':   return sorted.sort((a, b) => a.title.localeCompare(b.title))
+    case 'title_desc':  return sorted.sort((a, b) => b.title.localeCompare(a.title))
+    case 'rating_desc': return sorted.sort((a, b) => (b.user_books?.[0]?.rating || 0) - (a.user_books?.[0]?.rating || 0) || a.title.localeCompare(b.title))
+    case 'rating_asc':  return sorted.sort((a, b) => (a.user_books?.[0]?.rating || 0) - (b.user_books?.[0]?.rating || 0) || a.title.localeCompare(b.title))
+    case 'series_asc':  return sorted.sort((a, b) => (a.series || 'zzz').localeCompare(b.series || 'zzz') || (a.series_num || 0) - (b.series_num || 0))
+    default: return sorted
+  }
+}
+
+function groupBySeries(books) {
+  const seriesMap = {}
+  const standalone = []
+  for (const book of books) {
+    if (book.series) {
+      if (!seriesMap[book.series]) seriesMap[book.series] = []
+      seriesMap[book.series].push(book)
+    } else {
+      standalone.push(book)
+    }
+  }
+  // Sort books within each series by series_num
+  for (const s of Object.keys(seriesMap)) {
+    seriesMap[s].sort((a, b) => (a.series_num || 0) - (b.series_num || 0))
+  }
+  // Sort series names A-Z
+  const sortedSeries = Object.keys(seriesMap).sort((a, b) => a.localeCompare(b))
+  return { seriesMap, sortedSeries, standalone }
+}
+
 export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
-  const [books, setBooks] = useState([])
+  const [allBooks, setAllBooks] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -116,6 +193,8 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   const [filterAuthor, setFilterAuthor] = useState('')
   const [authors, setAuthors] = useState([])
   const [view, setView] = useState('grid')
+  const [sort, setSort] = useState('author_asc')
+  const [groupSeries, setGroupSeries] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [selected, setSelected] = useState(null)
 
@@ -123,43 +202,40 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const from = (currentPage - 1) * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
-
     let q = supabase
       .from('books')
       .select('*, user_books!left(status,rating,date_read,one_thing,best_moment,dragged,give_to,compare,recommend)', { count: 'exact' })
       .eq('user_books.user_id', uid)
 
-    if (search) q = q.or(`title.ilike.%${search}%,author_last.ilike.%${search}%,author_first.ilike.%${search}%`)
+    if (search) q = q.or(`title.ilike.%${search}%,author_last.ilike.%${search}%,author_first.ilike.%${search}%,series.ilike.%${search}%`)
     if (filterStatus) q = q.eq('user_books.status', filterStatus)
     if (filterRating) q = q.gte('user_books.rating', Number(filterRating))
     if (filterAuthor) q = q.eq('author_last', filterAuthor)
 
-    const { data, count, error } = await q.order('author_last').range(from, to)
-    if (!error) { setBooks(data || []); setTotal(count || 0) }
+    const { data, count, error } = await q.order('author_last').limit(2000)
+    if (!error) { setAllBooks(data || []); setTotal(count || 0) }
     setLoading(false)
-  }, [uid, search, filterStatus, filterRating, filterAuthor, currentPage])
+  }, [uid, search, filterStatus, filterRating, filterAuthor])
 
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
     supabase.from('books').select('author_last').order('author_last').then(({ data }) => {
-      const unique = [...new Set((data || []).map(b => b.author_last).filter(Boolean))]
-      setAuthors(unique)
+      setAuthors([...new Set((data || []).map(b => b.author_last).filter(Boolean))])
     })
   }, [])
 
-  useEffect(() => { setCurrentPage(1) }, [search, filterStatus, filterRating, filterAuthor])
+  useEffect(() => { setCurrentPage(1) }, [search, filterStatus, filterRating, filterAuthor, sort, groupSeries])
+
+  const sorted = sortBooks(allBooks, sort)
+
+  // Paginate only when not grouping by series
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const paginated = groupSeries ? sorted : sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const { seriesMap, sortedSeries, standalone } = groupBySeries(paginated)
 
   const exportExcel = async () => {
-    const { data } = await supabase
-      .from('books')
-      .select('*, user_books!left(status,rating,date_read,one_thing,recommend)')
-      .eq('user_books.user_id', uid)
-      .order('author_last')
-
-    const rows = (data || []).map(b => ({
+    const rows = sorted.map(b => ({
       Title: b.title,
       'Author First': b.author_first,
       'Author Last': b.author_last,
@@ -177,11 +253,10 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
     XLSX.writeFile(wb, 'sals-library.xlsx')
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const filterActive = search || filterStatus || filterRating || filterAuthor
   const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterRating(''); setFilterAuthor('') }
-
   const inputStyle = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '9px 12px', color: 'var(--text)', fontSize: 14, outline: 'none' }
+  const btnStyle = (active) => ({ background: active ? 'var(--gold-pale)' : 'var(--bg2)', border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '8px 14px', color: active ? 'var(--gold)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, transition: 'all 0.15s' })
 
   return (
     <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
@@ -191,40 +266,43 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>The Library</h1>
             <p style={{ color: 'var(--text2)', fontSize: 15 }}>{loading ? '…' : `${total.toLocaleString()} book${total !== 1 ? 's' : ''}`}</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')}
-              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 14px', color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-              {view === 'grid' ? <List size={15} /> : <Grid size={15} />}
-              {view === 'grid' ? 'List view' : 'Grid view'}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setGroupSeries(g => !g)} style={btnStyle(groupSeries)}>
+              <Layers size={15} /> By series
             </button>
-            <button onClick={exportExcel}
-              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}>
+            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} style={btnStyle(false)}>
+              {view === 'grid' ? <List size={15} /> : <Grid size={15} />}
+              {view === 'grid' ? 'List' : 'Grid'}
+            </button>
+            <button onClick={exportExcel} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}>
               <Download size={15} /> Export
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flexGrow: 1, minWidth: 200 }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title or author…"
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, author, or series…"
               style={{ ...inputStyle, paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} />
           </div>
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
             <option value="">All statuses</option>
             {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <select value={filterRating} onChange={e => setFilterRating(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
             <option value="">Any rating</option>
-            {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r}+ stars</option>)}
+            {[3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)}+</option>)}
           </select>
           <select value={filterAuthor} onChange={e => setFilterAuthor(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
             <option value="">All authors</option>
             {authors.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           {filterActive && (
-            <button onClick={clearFilters}
-              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '9px 12px', color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+            <button onClick={clearFilters} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text3)' }}>
               <X size={13} /> Clear
             </button>
           )}
@@ -232,20 +310,42 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Opening the shelves…</div>
-        ) : books.length === 0 ? (
+        ) : allBooks.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 80 }}>
             <p style={{ color: 'var(--text3)', fontSize: 15 }}>No books found.</p>
             {filterActive && <button onClick={clearFilters} style={{ marginTop: 12, background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', fontSize: 14 }}>Clear filters</button>}
+          </div>
+        ) : groupSeries ? (
+          <div>
+            {sortedSeries.map(s => (
+              <SeriesGroup key={s} seriesName={s} books={seriesMap[s]} view={view} onSelect={setSelected} />
+            ))}
+            {standalone.length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                  <div style={{ height: 1, background: 'var(--border)', flexGrow: 1 }} />
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--text3)', whiteSpace: 'nowrap', padding: '0 12px' }}>
+                    Standalone <span style={{ fontSize: 12 }}>({standalone.length})</span>
+                  </span>
+                  <div style={{ height: 1, background: 'var(--border)', flexGrow: 1 }} />
+                </div>
+                <div style={view === 'grid'
+                  ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
+                  : { display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => setSelected(book)} />)}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div style={view === 'grid'
             ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
             : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {books.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => setSelected(book)} />)}
+            {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => setSelected(book)} />)}
           </div>
         )}
 
-        {totalPages > 1 && (
+        {!groupSeries && totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
               style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', color: currentPage === 1 ? 'var(--text3)' : 'var(--text)', cursor: currentPage === 1 ? 'default' : 'pointer' }}>
