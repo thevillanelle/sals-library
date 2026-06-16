@@ -22,8 +22,8 @@ function Stars({ rating }) {
   if (!rating) return null
   return (
     <span style={{ display: 'flex', gap: 2 }}>
-      {[1, 2, 3].map(i => (
-        <Star key={i} size={11} fill={i <= rating ? 'var(--gold)' : 'none'} color={i <= rating ? 'var(--gold)' : 'var(--text3)'} />
+      {[1, 2, 3, 4, 5].map(i => (
+        <Star key={i} size={10} fill={i <= rating ? 'var(--gold)' : 'none'} color={i <= rating ? 'var(--gold)' : 'var(--text3)'} />
       ))}
     </span>
   )

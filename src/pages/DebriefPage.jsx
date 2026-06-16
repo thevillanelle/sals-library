@@ -83,7 +83,7 @@ export default function DebriefPage({ navigate, theme, toggleTheme, session }) {
         <h2 style={{ fontSize:28, marginBottom:12 }}>Debrief saved.</h2>
         <p style={{ color:'var(--text2)', marginBottom:32 }}><em style={{ fontFamily:'var(--font-serif)' }}>{selectedBook?.title}</em> is in the books.</p>
         <div style={{ display:'flex', gap:12, justifyContent:'center' }}>
-          <button onClick={() => navigate('debrief')} style={{ padding:'10px 20px', background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:'var(--radius)', color:'var(--text)', cursor:'pointer' }}>Debrief another</button>
+          <button onClick={() => { setDone(false); setStep(0); setAnswers({}); setSelectedBook(null); setBookSearch(''); setBookResults([]); setCurrent(''); setRating(0); }} style={{ padding:'10px 20px', background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:'var(--radius)', color:'var(--text)', cursor:'pointer' }}>Debrief another</button>
           <button onClick={() => navigate('home')} style={{ padding:'10px 20px', background:'var(--gold)', border:'none', borderRadius:'var(--radius)', color:'#1a1300', fontWeight:500, cursor:'pointer' }}>Back home</button>
         </div>
       </div>
