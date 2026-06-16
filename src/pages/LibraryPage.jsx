@@ -176,7 +176,7 @@ function groupBySeries(books) {
   }
   // Sort books within each series by series_num
   for (const s of Object.keys(seriesMap)) {
-    seriesMap[s].sort((a, b) => (a.series_num || 0) - (b.series_num || 0))
+    seriesMap[s].sort((a, b) => (Number(a.series_num) || 0) - (Number(b.series_num) || 0))
   }
   // Sort series names A-Z
   const sortedSeries = Object.keys(seriesMap).sort((a, b) => a.localeCompare(b))
@@ -256,28 +256,29 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   const filterActive = search || filterStatus || filterRating || filterAuthor
   const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterRating(''); setFilterAuthor('') }
 
-  const selectStyle = {
-    background: 'var(--bg2)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: '0 32px 0 12px',
-    height: 38,
-    color: 'var(--text)',
-    fontSize: 13,
-    outline: 'none',
-    cursor: 'pointer',
-    appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 10px center',
-    flexShrink: 0,
-  }
+  const chipSelect = (value, onChange, placeholder, options, colored) => (
+    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <select value={value} onChange={e => onChange(e.target.value)}
+        style={{
+          appearance: 'none', background: 'none', border: 'none', outline: 'none',
+          color: (colored && value) ? 'var(--gold)' : 'var(--text2)',
+          fontSize: 13, cursor: 'pointer', paddingRight: 16, paddingLeft: 0,
+          fontFamily: 'var(--font-sans)',
+        }}>
+        {options}
+      </select>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+        style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: (colored && value) ? 'var(--gold)' : 'var(--text3)' }}>
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </div>
+  )
 
   const iconBtnStyle = (active) => ({
-    background: active ? 'var(--gold-pale)' : 'var(--bg2)',
+    background: active ? 'var(--gold-pale)' : 'transparent',
     border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
     borderRadius: 'var(--radius)',
-    width: 38, height: 38,
+    width: 34, height: 34,
     color: active ? 'var(--gold)' : 'var(--text3)',
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -288,66 +289,65 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   return (
     <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>The Library</h1>
-          <p style={{ color: 'var(--text2)', fontSize: 15 }}>{loading ? '…' : `${total.toLocaleString()} book${total !== 1 ? 's' : ''}`}</p>
+
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>The Library</h1>
+            <p style={{ color: 'var(--text2)', fontSize: 15 }}>{loading ? '…' : `${total.toLocaleString()} book${total !== 1 ? 's' : ''}`}</p>
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button onClick={() => setGroupSeries(g => !g)} title="Group by series" style={iconBtnStyle(groupSeries)}>
+              <Layers size={14} />
+            </button>
+            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(false)}>
+              {view === 'grid' ? <List size={14} /> : <Grid size={14} />}
+            </button>
+            <button onClick={exportExcel} title="Export to Excel"
+              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', width: 34, height: 34, color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Download size={14} />
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
-          {/* Search */}
-          <div style={{ position: 'relative', flexGrow: 1, minWidth: 180 }}>
-            <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
-              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', height: 38, paddingLeft: 32, paddingRight: 12, color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
-          </div>
+        {/* Search row */}
+        <div style={{ position: 'relative', marginBottom: 10 }}>
+          <Search size={14} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title, author, or series…"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', height: 40, paddingLeft: 36, paddingRight: 16, color: 'var(--text)', fontSize: 14, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+        </div>
 
-          {/* Sort */}
-          <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...selectStyle, minWidth: 140 }}>
-            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+        {/* Filter pill row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 28, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0 16px', height: 38, overflowX: 'auto' }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Sort</span>
+          {chipSelect(sort, setSort, 'Sort', SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>), false)}
 
-          {/* Status */}
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...selectStyle, minWidth: 110, color: filterStatus ? 'var(--gold)' : 'var(--text)', borderColor: filterStatus ? 'var(--gold)' : 'var(--border)' }}>
-            <option value="">Status</option>
-            {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
 
-          {/* Rating */}
-          <select value={filterRating} onChange={e => setFilterRating(e.target.value)} style={{ ...selectStyle, minWidth: 100, color: filterRating ? 'var(--gold)' : 'var(--text)', borderColor: filterRating ? 'var(--gold)' : 'var(--border)' }}>
-            <option value="">Rating</option>
-            {[3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)}+</option>)}
-          </select>
+          <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Status</span>
+          {chipSelect(filterStatus, setFilterStatus, 'Status',
+            <><option value="">All</option>{Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</>, true)}
 
-          {/* Author */}
-          <select value={filterAuthor} onChange={e => setFilterAuthor(e.target.value)} style={{ ...selectStyle, minWidth: 130, color: filterAuthor ? 'var(--gold)' : 'var(--text)', borderColor: filterAuthor ? 'var(--gold)' : 'var(--border)' }}>
-            <option value="">Author</option>
-            {authors.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
 
-          {/* Divider */}
-          <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Rating</span>
+          {chipSelect(filterRating, setFilterRating, 'Rating',
+            <><option value="">Any</option>{[3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)}+</option>)}</>, true)}
 
-          {/* By series toggle */}
-          <button onClick={() => setGroupSeries(g => !g)} title="Group by series" style={iconBtnStyle(groupSeries)}>
-            <Layers size={15} />
-          </button>
+          <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
 
-          {/* Grid / List toggle */}
-          <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(false)}>
-            {view === 'grid' ? <List size={15} /> : <Grid size={15} />}
-          </button>
-
-          {/* Export */}
-          <button onClick={exportExcel} title="Export to Excel"
-            style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', width: 38, height: 38, color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Download size={15} />
-          </button>
+          <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Author</span>
+          {chipSelect(filterAuthor, setFilterAuthor, 'Author',
+            <><option value="">All</option>{authors.map(a => <option key={a} value={a}>{a}</option>)}</>, true)}
 
           {filterActive && (
-            <button onClick={clearFilters} title="Clear filters"
-              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', height: 38, padding: '0 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text3)', fontSize: 13, flexShrink: 0 }}>
-              <X size={13} /> Clear
-            </button>
+            <>
+              <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
+              <button onClick={clearFilters}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, padding: 0, flexShrink: 0 }}>
+                <X size={12} /> Clear
+              </button>
+            </>
           )}
         </div>
 
