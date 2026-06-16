@@ -149,16 +149,32 @@ function BookModal({ book, onClose }) {
   )
 }
 
+function seriesKey(b) {
+  // Within an author, series books sort before standalones, then by series name + number
+  if (!b.series) return '￿' // standalones last
+  return b.series + String(Number(b.series_num) || 0).padStart(6, '0')
+}
+
 function sortBooks(books, sortKey) {
   const sorted = [...books]
   switch (sortKey) {
-    case 'author_asc':  return sorted.sort((a, b) => (a.author_last || '').localeCompare(b.author_last || '') || (a.author_first || '').localeCompare(b.author_first || '') || a.title.localeCompare(b.title))
-    case 'author_desc': return sorted.sort((a, b) => (b.author_last || '').localeCompare(a.author_last || '') || a.title.localeCompare(b.title))
+    case 'author_asc':
+      return sorted.sort((a, b) =>
+        (a.author_last || '').localeCompare(b.author_last || '') ||
+        (a.author_first || '').localeCompare(b.author_first || '') ||
+        seriesKey(a).localeCompare(seriesKey(b)) ||
+        a.title.localeCompare(b.title))
+    case 'author_desc':
+      return sorted.sort((a, b) =>
+        (b.author_last || '').localeCompare(a.author_last || '') ||
+        (b.author_first || '').localeCompare(a.author_first || '') ||
+        seriesKey(a).localeCompare(seriesKey(b)) ||
+        a.title.localeCompare(b.title))
     case 'title_asc':   return sorted.sort((a, b) => a.title.localeCompare(b.title))
     case 'title_desc':  return sorted.sort((a, b) => b.title.localeCompare(a.title))
     case 'rating_desc': return sorted.sort((a, b) => (b.user_books?.[0]?.rating || 0) - (a.user_books?.[0]?.rating || 0) || a.title.localeCompare(b.title))
     case 'rating_asc':  return sorted.sort((a, b) => (a.user_books?.[0]?.rating || 0) - (b.user_books?.[0]?.rating || 0) || a.title.localeCompare(b.title))
-    case 'series_asc':  return sorted.sort((a, b) => (a.series || 'zzz').localeCompare(b.series || 'zzz') || (a.series_num || 0) - (b.series_num || 0))
+    case 'series_asc':  return sorted.sort((a, b) => (a.series || 'zzz').localeCompare(b.series || 'zzz') || (Number(a.series_num) || 0) - (Number(b.series_num) || 0))
     default: return sorted
   }
 }
