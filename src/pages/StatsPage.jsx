@@ -1,0 +1,1 @@
+export default function StatsPage(){return <div style={{padding:40,color:"var(--text)",fontFamily:"var(--font-serif)",fontSize:24}}>Stats — coming in Claude Code</div>}

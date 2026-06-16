@@ -1,0 +1,1 @@
+export default function FillBlanksPage(){return <div style={{padding:40,color:"var(--text)",fontFamily:"var(--font-serif)",fontSize:24}}>Fill Blanks — coming in Claude Code</div>}

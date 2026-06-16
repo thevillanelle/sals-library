@@ -1,0 +1,1 @@
+export default function AddWantPage(){return <div style={{padding:40,color:"var(--text)",fontFamily:"var(--font-serif)",fontSize:24}}>Add Want — coming in Claude Code</div>}

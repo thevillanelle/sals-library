@@ -1,0 +1,21 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --bg: #0f0e0c; --bg2: #1a1814; --bg3: #252219; --bg4: #2e2a20;
+  --border: rgba(212,176,106,0.15); --border2: rgba(212,176,106,0.3);
+  --gold: #c9963c; --gold-pale: rgba(201,150,60,0.12);
+  --text: #e8dcc8; --text2: #a89880; --text3: #6b5f4e;
+  --radius: 10px; --radius-lg: 16px;
+}
+[data-theme="light"] {
+  --bg: #faf7f2; --bg2: #f3ede3; --bg3: #ece4d5;
+  --border: rgba(100,75,40,0.12); --border2: rgba(100,75,40,0.25);
+  --gold: #8c6420; --text: #2a2018; --text2: #6b5438; --text3: #a08060;
+}
+html, body, #root { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1,h2,h3,h4 { font-family: var(--font-serif); font-weight: 500; line-height: 1.25; color: var(--text); }
+button { cursor: pointer; font-family: var(--font-sans); }
+input, select, textarea { font-family: var(--font-sans); font-size: 15px; color: var(--text); background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; outline: none; transition: border-color 0.15s; width: 100%; }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+input::placeholder { color: var(--text3); }
