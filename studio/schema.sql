@@ -42,9 +42,7 @@ CREATE TABLE IF NOT EXISTS public.reading_sessions (
   streak_count INTEGER DEFAULT 1,
   UNIQUE (user_id, session_date)
 );
-
-ALTER TABLE public.books
-  ADD CONSTRAINT IF NOT EXISTS books_title_author_last_key UNIQUE (title, author_last);
+CREATE UNIQUE INDEX IF NOT EXISTS books_title_author_last_key ON public.books (title, author_last);
 
 
 -- ── 2. ROW LEVEL SECURITY ────────────────────────────────────
