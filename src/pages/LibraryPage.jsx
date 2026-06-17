@@ -29,6 +29,15 @@ function Stars({ rating }) {
   )
 }
 
+function SeriesPill({ series, num }) {
+  if (!series) return null
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px', borderRadius: 20, border: '1px solid var(--gold)', color: 'var(--gold)', letterSpacing: '0.04em', whiteSpace: 'nowrap', flexShrink: 0 }}>
+      {series}{num ? ` #${num}` : ''}
+    </span>
+  )
+}
+
 function BookCard({ book, view, onClick }) {
   const [hov, setHov] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
@@ -37,25 +46,15 @@ function BookCard({ book, view, onClick }) {
   if (view === 'list') {
     return (
       <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
-        style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '14px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
+        style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
+        <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: ub?.rating ? 'var(--gold)' : 'var(--border)', flexShrink: 0, opacity: ub?.rating ? 0.7 : 0.3 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{book.title}</div>
-          <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: ub?.one_thing ? 4 : 0 }}>
-            {author}{book.series ? ` · ${book.series}${book.series_num ? ` #${book.series_num}` : ''}` : ''}
-          </div>
-          {(book.summary || ub?.one_thing) && (
-            <div style={{ fontSize: 12, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: ub?.one_thing && !book.summary ? 'italic' : 'normal' }}>
-              {ub?.one_thing && !book.summary ? `"${ub.one_thing}"` : book.summary}
-            </div>
-          )}
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.3 }}>{book.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{author}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <SeriesPill series={book.series} num={book.series_num} />
           <Stars rating={ub?.rating} />
-          {ub?.status && (
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: (statusColors[ub.status] || 'var(--gold)') + '20', color: statusColors[ub.status] || 'var(--gold)', whiteSpace: 'nowrap' }}>
-              {statusLabels[ub.status] || ub.status}
-            </span>
-          )}
         </div>
       </div>
     )
@@ -63,21 +62,20 @@ function BookCard({ book, view, onClick }) {
 
   return (
     <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
-      style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--border2)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', padding: '20px 18px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.35 }}>{book.title}</div>
-      <div style={{ fontSize: 12, color: 'var(--text2)' }}>{author}</div>
-      {book.series && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</div>}
-      {(book.summary || ub?.one_thing) && (
-        <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 2, fontStyle: ub?.one_thing && !book.summary ? 'italic' : 'normal' }}>
-          {ub?.one_thing && !book.summary ? `"${ub.one_thing}"` : book.summary}
+      style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Spine accent */}
+      <div style={{ height: 3, background: ub?.rating ? `var(--gold)` : 'var(--border)', opacity: ub?.rating ? 0.8 : 0.25, transition: 'opacity 0.2s' }} />
+      <div style={{ padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{book.title}</div>
+        <div style={{ fontSize: 11, color: 'var(--text2)', letterSpacing: '0.01em' }}>{author}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+          <Stars rating={ub?.rating} />
+          <SeriesPill series={book.series} num={book.series_num} />
         </div>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 6 }}>
-        <Stars rating={ub?.rating} />
-        {ub?.status && (
-          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: (statusColors[ub.status] || 'var(--gold)') + '20', color: statusColors[ub.status] || 'var(--gold)' }}>
-            {statusLabels[ub.status] || ub.status}
-          </span>
+        {ub?.one_thing && (
+          <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            "{ub.one_thing}"
+          </div>
         )}
       </div>
     </div>
@@ -134,7 +132,6 @@ function BookModal({ book, onClose }) {
         <p style={{ color: 'var(--text2)', marginBottom: 4 }}>{author}</p>
         {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 4 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {book.summary && <DetailRow label="About" value={book.summary} />}
           {ub.status && <DetailRow label="Status" value={statusLabels[ub.status] || ub.status} />}
           {ub.rating && <DetailRow label="Rating" value={<Stars rating={ub.rating} />} />}
           {ub.date_read && <DetailRow label="Date read" value={new Date(ub.date_read).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} />}
