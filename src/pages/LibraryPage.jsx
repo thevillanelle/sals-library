@@ -131,6 +131,9 @@ function BookModal({ book, onClose }) {
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 400, marginBottom: 4, paddingRight: 24 }}>{book.title}</h2>
         <p style={{ color: 'var(--text2)', marginBottom: 4 }}>{author}</p>
         {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 4 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
+        {book.summary && (
+          <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, marginTop: 12 }}>{book.summary}</p>
+        )}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {ub.status && <DetailRow label="Status" value={statusLabels[ub.status] || ub.status} />}
           {ub.rating && <DetailRow label="Rating" value={<Stars rating={ub.rating} />} />}

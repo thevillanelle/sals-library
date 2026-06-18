@@ -1,73 +1,88 @@
-// Fetches book summaries from Google Books API and writes a SQL file.
+// Fetches book descriptions from Open Library and writes summaries.sql.
 // Run: node fetch-summaries.mjs
-// Then paste the generated summaries.sql into the Supabase SQL editor.
+// Then paste summaries.sql into the Supabase SQL editor.
 
-import { createClient } from '@supabase/supabase-js'
 import { readFileSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
-const env = Object.fromEntries(
-  readFileSync(join(__dir, '.env'), 'utf8')
-    .split('\n').filter(l => l.includes('=') && !l.startsWith('#'))
-    .map(l => { const i = l.indexOf('='); return [l.slice(0,i).trim(), l.slice(i+1).trim()] })
-)
-
-const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
 const sleep = ms => new Promise(r => setTimeout(r, ms))
-
-async function fetchSummary(title, authorFirst, authorLast) {
-  const q = encodeURIComponent(`intitle:${title}${authorLast ? ` inauthor:${authorLast}` : ''}`)
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3&printType=books`
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    const data = await res.json()
-    for (const item of (data.items || [])) {
-      const desc = item.volumeInfo?.description
-      if (desc && desc.length > 50)
-        return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 600)
-    }
-    return null
-  } catch { return null }
-}
 
 function esc(str) {
   return str.replace(/'/g, "''")
 }
 
-async function main() {
-  const { data: books, error } = await supabase
-    .from('books')
-    .select('id, title, author_first, author_last')
-    .is('summary', null)
-    .order('author_last')
+function parseCSV(path) {
+  const lines = readFileSync(path, 'utf8').split('\n').slice(1)
+  const books = []
+  for (const line of lines) {
+    if (!line.trim()) continue
+    const parts = line.split(',')
+    const first = parts[0]?.trim()
+    const last = parts[1]?.trim()
+    const titleRaw = parts[2]?.trim()
+    if (!titleRaw || !last) continue
+    const title = titleRaw.replace(/\s*\(.*?\)\s*/g, '').trim()
+    books.push({ first, last, title })
+  }
+  return books
+}
 
-  if (error) { console.error('Failed to load books:', error.message); process.exit(1) }
-  console.log(`Fetching summaries for ${books.length} books…\n`)
+async function fetchDescription(title, authorLast) {
+  try {
+    // Step 1: search for the book
+    const q = encodeURIComponent(`${title} ${authorLast}`)
+    const searchUrl = `https://openlibrary.org/search.json?q=${q}&limit=3&fields=key,title,author_name,first_publish_year`
+    const searchRes = await fetch(searchUrl)
+    if (!searchRes.ok) return null
+    const searchData = await searchRes.json()
+
+    const doc = (searchData.docs || []).find(d =>
+      d.author_name?.some(a => a.toLowerCase().includes(authorLast.toLowerCase()))
+    ) || searchData.docs?.[0]
+
+    if (!doc?.key) return null
+
+    // Step 2: fetch the work to get description
+    const workRes = await fetch(`https://openlibrary.org${doc.key}.json`)
+    if (!workRes.ok) return null
+    const work = await workRes.json()
+
+    let desc = work.description
+    if (typeof desc === 'object') desc = desc.value
+    if (!desc || desc.length < 60) return null
+
+    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 600)
+  } catch { return null }
+}
+
+async function main() {
+  const csvPath = '/tmp/sals_books_export/Sheet1-Table 1.csv'
+  const books = parseCSV(csvPath)
+  console.log(`Fetching descriptions for ${books.length} books via Open Library...\n`)
 
   const lines = []
   let found = 0, missing = 0
 
   for (let i = 0; i < books.length; i++) {
-    const book = books[i]
-    const summary = await fetchSummary(book.title, book.author_first, book.author_last)
+    const { title, first, last } = books[i]
+    const desc = await fetchDescription(title, last)
 
-    if (summary) {
-      lines.push(`UPDATE public.books SET summary = '${esc(summary)}' WHERE id = '${book.id}';`)
+    if (desc) {
+      lines.push(`UPDATE public.books SET summary = '${esc(desc)}' WHERE title ILIKE '${esc(title)}' AND author_last ILIKE '${esc(last)}';`)
       found++
     } else {
       missing++
     }
 
-    process.stdout.write(`\r  ${found} found, ${missing} missing — ${i+1}/${books.length}`)
-    await sleep(120)
+    process.stdout.write(`\r  ${found} found, ${missing} not found -- ${i + 1}/${books.length}`)
+    await sleep(200)
   }
 
   const outPath = join(__dir, 'summaries.sql')
   writeFileSync(outPath, lines.join('\n') + '\n')
-  console.log(`\n\nDone. ${found} summaries written to summaries.sql`)
+  console.log(`\n\nDone. ${found} descriptions written to summaries.sql`)
   console.log('Paste summaries.sql into the Supabase SQL editor to apply.')
 }
 
