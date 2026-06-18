@@ -20,7 +20,7 @@ export default function HomePage({ navigate, theme, toggleTheme, session }) {
     const uid = session.user.id
     Promise.all([
       supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid),
-      supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid).eq('status','read'),
+      supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid).not('one_thing','is',null),
       supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid).not('rating','is',null),
       supabase.from('reading_sessions').select('streak_count').eq('user_id',uid).order('session_date',{ascending:false}).limit(1),
     ]).then(([{count:total},{count:read},{count:rated},{data:sess}]) => {
@@ -39,7 +39,7 @@ export default function HomePage({ navigate, theme, toggleTheme, session }) {
           <p style={{ color:'var(--text2)', fontSize:16 }}>What are we doing today?</p>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:48 }}>
-          {[{label:'In the library',value:stats.total},{label:'Books read',value:stats.read},{label:'Rated',value:stats.rated},{label:'Day streak',value:stats.streak}].map(s => (
+          {[{label:'In the library',value:stats.total},{label:'Debriefed',value:stats.read},{label:'Rated',value:stats.rated},{label:'Day streak',value:stats.streak}].map(s => (
             <div key={s.label} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'16px 20px' }}>
               <div style={{ fontSize:11, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{s.label}</div>
               <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:400 }}>{s.value}</div>

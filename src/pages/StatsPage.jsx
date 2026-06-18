@@ -76,7 +76,7 @@ export default function StatsPage({ navigate, theme, toggleTheme, session }) {
     const load = async () => {
       const { data: ubAll } = await supabase
         .from('user_books')
-        .select('status, rating, date_read, book_id, books(author_first, author_last, series)')
+        .select('status, rating, date_read, book_id, books(author_first, author_last, series, genre)')
         .eq('user_id', uid)
 
       if (!ubAll) { setLoading(false); return }
@@ -120,6 +120,14 @@ export default function StatsPage({ navigate, theme, toggleTheme, session }) {
       for (const ub of ubAll) {
         if (ub.books?.series) seriesCounts[ub.books.series] = (seriesCounts[ub.books.series] || 0) + 1
       }
+      const genreCounts = {}
+      for (const ub of read) {
+        if (ub.books?.genre) genreCounts[ub.books.genre] = (genreCounts[ub.books.genre] || 0) + 1
+      }
+      const topGenres = Object.entries(genreCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, value]) => ({ label, value }))
+
       const topSeries = Object.entries(seriesCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
@@ -137,6 +145,7 @@ export default function StatsPage({ navigate, theme, toggleTheme, session }) {
         topAuthors,
         byYearData,
         topSeries,
+        topGenres,
         wantToRead: ubAll.filter(ub => ub.status === 'want-to-read').length,
         streak: sessData?.[0]?.streak_count || 0,
       })
@@ -198,6 +207,13 @@ export default function StatsPage({ navigate, theme, toggleTheme, session }) {
           <div style={{ marginBottom: 48 }}>
             <SectionHead title="Books read by year" />
             <BarChart data={stats.byYearData} color="#6a9ab0" />
+          </div>
+        )}
+
+        {stats.topGenres?.length > 0 && (
+          <div style={{ marginBottom: 48 }}>
+            <SectionHead title="Books by genre" />
+            <BarChart data={stats.topGenres} color="#7a9e8a" />
           </div>
         )}
 

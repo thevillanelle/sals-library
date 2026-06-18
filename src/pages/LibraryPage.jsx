@@ -204,7 +204,10 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterRating, setFilterRating] = useState('')
   const [filterAuthor, setFilterAuthor] = useState('')
+  const [filterGenre, setFilterGenre] = useState('')
+  const [filterFiction, setFilterFiction] = useState('')
   const [authors, setAuthors] = useState([])
+  const [genres, setGenres] = useState([])
   const [view, setView] = useState('grid')
   const [sort, setSort] = useState('author_asc')
   const [groupSeries, setGroupSeries] = useState(false)
@@ -224,11 +227,14 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
     if (filterStatus) q = q.eq('user_books.status', filterStatus)
     if (filterRating) q = q.gte('user_books.rating', Number(filterRating))
     if (filterAuthor) q = q.eq('author_last', filterAuthor)
+    if (filterGenre) q = q.eq('genre', filterGenre)
+    if (filterFiction === 'fiction') q = q.eq('fiction', true)
+    if (filterFiction === 'nonfiction') q = q.eq('fiction', false)
 
     const { data, count, error } = await q.order('author_last').limit(2000)
     if (!error) { setAllBooks(data || []); setTotal(count || 0) }
     setLoading(false)
-  }, [uid, search, filterStatus, filterRating, filterAuthor])
+  }, [uid, search, filterStatus, filterRating, filterAuthor, filterGenre, filterFiction])
 
   useEffect(() => { load() }, [load])
 
@@ -236,9 +242,12 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
     supabase.from('books').select('author_last').order('author_last').then(({ data }) => {
       setAuthors([...new Set((data || []).map(b => b.author_last).filter(Boolean))])
     })
+    supabase.from('books').select('genre').not('genre', 'is', null).then(({ data }) => {
+      setGenres([...new Set((data || []).map(b => b.genre).filter(Boolean))].sort())
+    })
   }, [])
 
-  useEffect(() => { setCurrentPage(1) }, [search, filterStatus, filterRating, filterAuthor, sort, groupSeries])
+  useEffect(() => { setCurrentPage(1) }, [search, filterStatus, filterRating, filterAuthor, filterGenre, filterFiction, sort, groupSeries])
 
   const sorted = sortBooks(allBooks, sort)
 
@@ -266,8 +275,8 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
     XLSX.writeFile(wb, 'sals-library.xlsx')
   }
 
-  const filterActive = search || filterStatus || filterRating || filterAuthor
-  const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterRating(''); setFilterAuthor('') }
+  const filterActive = search || filterStatus || filterRating || filterAuthor || filterGenre || filterFiction
+  const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterRating(''); setFilterAuthor(''); setFilterGenre(''); setFilterFiction('') }
 
   const chipSelect = (value, onChange, placeholder, options, colored) => (
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
@@ -352,6 +361,20 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
           <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Author</span>
           {chipSelect(filterAuthor, setFilterAuthor, 'Author',
             <><option value="">All</option>{authors.map(a => <option key={a} value={a}>{a}</option>)}</>, true)}
+
+          {genres.length > 0 && (
+            <>
+              <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Genre</span>
+              {chipSelect(filterGenre, setFilterGenre, 'Genre',
+                <><option value="">All</option>{genres.map(g => <option key={g} value={g}>{g}</option>)}</>, true)}
+            </>
+          )}
+
+          <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 14px', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 10, flexShrink: 0 }}>Type</span>
+          {chipSelect(filterFiction, setFilterFiction, 'Type',
+            <><option value="">All</option><option value="fiction">Fiction</option><option value="nonfiction">Nonfiction</option></>, true)}
 
           {filterActive && (
             <>

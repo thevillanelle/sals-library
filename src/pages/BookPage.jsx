@@ -149,13 +149,13 @@ export default function BookPage({ navigate, theme, toggleTheme, session, pageDa
   }
 
   if (loading) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Opening…</div>
     </Shell>
   )
 
   if (!book) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)' }}>Book not found.</div>
     </Shell>
   )
@@ -164,7 +164,7 @@ export default function BookPage({ navigate, theme, toggleTheme, session, pageDa
   const sc = statusColors[ub?.status] || statusColors.read
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
       <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 80 }}>
 
         {/* Header */}
