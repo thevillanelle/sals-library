@@ -9,6 +9,10 @@ import FillBlanksPage from './pages/FillBlanksPage'
 import NextReadPage from './pages/NextReadPage'
 import StatsPage from './pages/StatsPage'
 import BookPage from './pages/BookPage'
+import SeriesPage from './pages/SeriesPage'
+import AuthorPage from './pages/AuthorPage'
+import VersusPage from './pages/VersusPage'
+import GuidePage from './pages/GuidePage'
 
 function AppRoutes() {
   const { session, loading, theme, toggleTheme } = useApp()
@@ -31,6 +35,10 @@ function AppRoutes() {
       <Route path="/fill"      element={<FillBlanksPage />} />
       <Route path="/next-read" element={<NextReadPage />} />
       <Route path="/stats"     element={<StatsPage />} />
+      <Route path="/series"    element={<SeriesPage />} />
+      <Route path="/author"    element={<AuthorPage />} />
+      <Route path="/versus"    element={<VersusPage />} />
+      <Route path="/guide"     element={<GuidePage />} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   )

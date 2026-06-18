@@ -180,7 +180,7 @@ export default function BookPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, fontWeight: 400, marginBottom: 6, lineHeight: 1.2 }}>{book.title}</h1>
-              <p style={{ color: 'var(--text2)', fontSize: 16, marginBottom: 4 }}>{author}</p>
+              <p onClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} style={{ color: 'var(--text2)', fontSize: 16, marginBottom: 4, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--border2)', textUnderlineOffset: 3 }}>{author}</p>
               {book.series && <p style={{ color: 'var(--text3)', fontSize: 13 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
@@ -306,6 +306,10 @@ export default function BookPage() {
                 </button>
               ))}
             </div>
+          </Field>
+
+          <Field label="Memorable passage">
+            <TextInput value={ub?.passage} onSave={v => saveUb('passage', v || null)} placeholder="A sentence or paragraph that stays with you…" multiline />
           </Field>
         </div>
 

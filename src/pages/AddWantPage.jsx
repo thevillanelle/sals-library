@@ -107,19 +107,19 @@ export default function AddWantPage() {
     setOlResults([])
     setShowManual(false)
 
-    const [{ data: local }, ol] = await Promise.all([
-      supabase.from('books')
-        .select('id,title,author_first,author_last,series,series_num')
-        .or(`title.ilike.%${query}%,author_last.ilike.%${query}%`)
-        .limit(8),
-      searchOpenLibrary(query),
-    ])
-
+    // Show local results immediately — no waiting on OL
+    const { data: local } = await supabase.from('books')
+      .select('id,title,author_first,author_last,series,series_num')
+      .or(`title.ilike.%${query}%,author_last.ilike.%${query}%`)
+      .limit(8)
     setLocalResults(local || [])
-    // Only show OL results not already in local
-    const localTitles = new Set((local || []).map(b => b.title.toLowerCase()))
-    setOlResults(ol.filter(b => !localTitles.has(b.title.toLowerCase())))
-    setSearching(false)
+
+    // OL loads in the background; spinner stays until it resolves
+    searchOpenLibrary(query).then(ol => {
+      const localTitles = new Set((local || []).map(b => b.title.toLowerCase()))
+      setOlResults(ol.filter(b => !localTitles.has(b.title.toLowerCase())))
+      setSearching(false)
+    })
   }
 
   const handleKey = e => { if (e.key === 'Enter') search() }

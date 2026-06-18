@@ -39,7 +39,7 @@ function SeriesPill({ series, num }) {
   )
 }
 
-function BookCard({ book, view, onClick }) {
+function BookCard({ book, view, onClick, onAuthorClick }) {
   const [hov, setHov] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
   const ub = book.user_books?.[0]
@@ -53,7 +53,7 @@ function BookCard({ book, view, onClick }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.3 }}>{book.title}</div>
           <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
-            {author}
+            <span onClick={e => { e.stopPropagation(); onAuthorClick?.() }} style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--border2)', textUnderlineOffset: 2 }}>{author}</span>
             {book.dewey && <span style={{ fontFamily: 'monospace', color: 'var(--text3)', marginLeft: 10, fontSize: 11 }}>{book.dewey}</span>}
           </div>
           {(book.genre || book.fiction != null) && (
@@ -420,7 +420,7 @@ export default function LibraryPage() {
                 <div style={view === 'grid'
                   ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
                   : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} />)}
+                  {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
                 </div>
               </>
             )}
@@ -429,7 +429,7 @@ export default function LibraryPage() {
           <div style={view === 'grid'
             ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
             : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} />)}
+            {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
           </div>
         )}
 
