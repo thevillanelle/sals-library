@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS public.user_books (
   give_to     TEXT,
   compare     TEXT,
   recommend   TEXT,
-  passage     TEXT,
+  passage          TEXT,
+  weather_condition TEXT,
+  weather_temp      INTEGER,
   created_at  TIMESTAMPTZ DEFAULT now(),
   UNIQUE (user_id, book_id)
 );

@@ -45,7 +45,7 @@ function BookCard({ book, onPick, winner }) {
 
 export default function VersusPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { session, weather } = useApp()
   const [pool, setPool] = useState([])
   const [left, setLeft] = useState(null)
   const [right, setRight] = useState(null)
@@ -102,7 +102,7 @@ export default function VersusPage() {
   const startReading = async () => {
     if (!winner) return
     setStarting(true)
-    await supabase.from('user_books').update({ status: 'reading', date_started: new Date().toISOString().split('T')[0] }).eq('user_id', session.user.id).eq('book_id', winner.id)
+    await supabase.from('user_books').update({ status: 'reading', date_started: new Date().toISOString().split('T')[0], weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }).eq('user_id', session.user.id).eq('book_id', winner.id)
     navigate('/book/' + winner.id)
   }
 

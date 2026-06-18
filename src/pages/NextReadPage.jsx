@@ -46,7 +46,7 @@ function BookRow({ book, onNavigate, onStart, starting }) {
 
 export default function NextReadPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { session, weather } = useApp()
   const [sections, setSections] = useState([])
   const [wantBooks, setWantBooks] = useState([])  // flat list for random pick
   const [avgMap, setAvgMap] = useState({})
@@ -123,7 +123,7 @@ export default function NextReadPage() {
   async function startReading(book) {
     setStarting(book.id)
     await supabase.from('user_books')
-      .update({ status: 'reading', date_started: new Date().toISOString().split('T')[0] })
+      .update({ status: 'reading', date_started: new Date().toISOString().split('T')[0], weather_condition: weather?.condition || null, weather_temp: weather?.temp || null })
       .eq('user_id', uid).eq('book_id', book.id)
     navigate('/book/' + book.id)
   }

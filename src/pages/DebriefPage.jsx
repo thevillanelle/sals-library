@@ -26,7 +26,7 @@ const inputStyle = {
 
 export default function DebriefPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { session, weather } = useApp()
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState({})
   const [bookSearch, setBookSearch] = useState('')
@@ -81,6 +81,8 @@ export default function DebriefPage() {
       compare: finalAnswers.compare || null,
       recommend: finalAnswers.recommend || null,
       date_read: new Date().toISOString().split('T')[0],
+      weather_condition: weather?.condition || null,
+      weather_temp: weather?.temp || null,
     }, { onConflict: 'user_id,book_id' })
     setSaving(false)
     if (!error) setDone(true)

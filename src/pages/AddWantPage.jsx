@@ -87,7 +87,7 @@ async function enrichFromOpenLibrary(olKey, subjects) {
 
 export default function AddWantPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { session, weather } = useApp()
   const [query, setQuery] = useState('')
   const [localResults, setLocalResults] = useState([])
   const [olResults, setOlResults] = useState([])
@@ -152,7 +152,7 @@ export default function AddWantPage() {
     }
 
     if (bookId) {
-      await supabase.from('user_books').upsert({ user_id: uid, book_id: bookId, status: 'want-to-read' }, { onConflict: 'user_id,book_id' })
+      await supabase.from('user_books').upsert({ user_id: uid, book_id: bookId, status: 'want-to-read', weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }, { onConflict: 'user_id,book_id' })
     }
 
     setSaving(false)
