@@ -1,11 +1,11 @@
 -- ============================================================
--- Sal's Library — Master SQL
+-- Sal's Library - Master SQL
 -- Run once in the Supabase SQL editor to set up everything from scratch.
 -- Safe to re-run: uses IF NOT EXISTS / ON CONFLICT throughout.
 -- ============================================================
 
 
--- ── 1. SCHEMA ────────────────────────────────────────────────
+-- 1. SCHEMA
 
 CREATE TABLE IF NOT EXISTS public.books (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.reading_sessions (
 CREATE UNIQUE INDEX IF NOT EXISTS books_title_author_last_key ON public.books (title, author_last);
 
 
--- ── 2. ROW LEVEL SECURITY ────────────────────────────────────
+-- 2. ROW LEVEL SECURITY
 
 ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_books ENABLE ROW LEVEL SECURITY;
@@ -80,7 +80,7 @@ CREATE POLICY sessions_upsert ON public.reading_sessions
   FOR UPDATE TO authenticated USING (auth.uid() = user_id);
 
 
--- ── 3. SEED TRIGGER ──────────────────────────────────────────
+-- 3. SEED TRIGGER
 
 CREATE OR REPLACE FUNCTION seed_user_library()
 RETURNS trigger AS $$
@@ -97,7 +97,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION seed_user_library();
 
--- ── 4. BOOKS (931) ───────────────────────────────────────────
+-- 4. BOOKS (931)
 
 INSERT INTO books (title, author_first, author_last, series, series_num) VALUES
   ('Adrenaline', 'Jeff', 'Abbott', 'Sam Capra', '1'),
@@ -374,15 +374,16 @@ INSERT INTO books (title, author_first, author_last, series, series_num) VALUES
   ('A Darkness More Than Night (Harry Bosch)', 'Michael', 'Connelly', NULL, NULL),
   ('The Late Show', 'Michael', 'Connelly', 'Renee Ballard', '1'),
   ('Two Kinds of Truth', 'Michael', 'Connelly', 'Harry Bosch', '20'),
-  ('Dark Sacred Night', 'Michael', 'Connelly', 'Harry Bosch', '21');
+  ('Dark Sacred Night', 'Michael', 'Connelly', 'Harry Bosch', '21')
+ON CONFLICT (title, author_last) DO NOTHING;
 
--- ── 5. SEED EXISTING USERS ───────────────────────────────────
+-- 5. SEED EXISTING USERS
 
 INSERT INTO public.user_books (user_id, book_id, status)
 SELECT u.id, b.id, 'read' FROM auth.users u CROSS JOIN public.books b
 ON CONFLICT (user_id, book_id) DO NOTHING;
 
--- ── 6. STAR RATINGS (55 books) ───────────────────────────────
+-- 6. STAR RATINGS (55 BOOKS)
 
 UPDATE public.user_books SET rating = 3 WHERE book_id = (SELECT id FROM public.books WHERE title ILIKE 'Things Fall Apart' AND author_last ILIKE 'Achebe' LIMIT 1) AND rating IS NULL;
 UPDATE public.user_books SET rating = 3 WHERE book_id = (SELECT id FROM public.books WHERE title ILIKE 'Watership Down' AND author_last ILIKE 'Adams' LIMIT 1) AND rating IS NULL;
@@ -440,7 +441,7 @@ UPDATE public.user_books SET rating = 3 WHERE book_id = (SELECT id FROM public.b
 UPDATE public.user_books SET rating = 3 WHERE book_id = (SELECT id FROM public.books WHERE title ILIKE 'Grapes of Wrath' AND author_last ILIKE 'Steinbeck' LIMIT 1) AND rating IS NULL;
 UPDATE public.user_books SET rating = 1 WHERE book_id = (SELECT id FROM public.books WHERE title ILIKE 'The Hobbit' AND author_last ILIKE 'Tolkien' LIMIT 1) AND rating IS NULL;
 
--- ── 7. VERIFY ────────────────────────────────────────────────
+-- 7. VERIFY
 
 SELECT COUNT(*) AS books        FROM public.books;
 SELECT COUNT(*) AS user_books   FROM public.user_books;
