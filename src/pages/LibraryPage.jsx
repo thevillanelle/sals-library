@@ -50,7 +50,16 @@ function BookCard({ book, view, onClick }) {
         <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: ub?.rating ? 'var(--gold)' : 'var(--border)', flexShrink: 0, opacity: ub?.rating ? 0.7 : 0.3 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, lineHeight: 1.3 }}>{book.title}</div>
-          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{author}</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
+            {author}
+            {book.dewey && <span style={{ fontFamily: 'monospace', color: 'var(--text3)', marginLeft: 10, fontSize: 11 }}>{book.dewey}</span>}
+          </div>
+          {(book.genre || book.fiction != null) && (
+            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+              {book.fiction != null && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 20, border: '1px solid var(--border2)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{book.fiction ? 'Fiction' : 'Nonfiction'}</span>}
+              {book.genre && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 20, background: 'var(--gold-pale)', border: '1px solid var(--gold)', color: 'var(--gold)', letterSpacing: '0.04em' }}>{book.genre}</span>}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {ub?.status && <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 20, padding: '2px 8px', fontSize: 10, color: sc.text }}>{statusLabels[ub.status]}</span>}
@@ -65,17 +74,40 @@ function BookCard({ book, view, onClick }) {
     <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
       style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ height: 3, background: ub?.rating ? 'var(--gold)' : 'var(--border)', opacity: ub?.rating ? 0.8 : 0.25 }} />
-      <div style={{ padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+      <div style={{ padding: '14px 14px 12px', display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{book.title}</div>
         <div style={{ fontSize: 11, color: 'var(--text2)', letterSpacing: '0.01em' }}>{author}</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+
+        {/* Genre + fiction pills */}
+        {(book.genre || book.fiction != null) && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
+            {book.fiction != null && (
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 20, border: '1px solid var(--border2)', color: 'var(--text3)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                {book.fiction ? 'Fiction' : 'Nonfiction'}
+              </span>
+            )}
+            {book.genre && (
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'var(--gold-pale)', border: '1px solid var(--gold)', color: 'var(--gold)', letterSpacing: '0.04em' }}>
+                {book.genre}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
           <Stars rating={ub?.rating} />
           <SeriesPill series={book.series} num={book.series_num} />
         </div>
         {ub?.status && <span style={{ alignSelf: 'flex-start', background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 20, padding: '2px 8px', fontSize: 10, color: sc.text }}>{statusLabels[ub.status]}</span>}
         {ub?.one_thing && (
-          <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             "{ub.one_thing}"
+          </div>
+        )}
+        {/* Dewey decimal at the bottom like a library sticker */}
+        {book.dewey && (
+          <div style={{ marginTop: 'auto', paddingTop: 6, fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace', letterSpacing: '0.06em', borderTop: '1px solid var(--border)' }}>
+            {book.dewey}
           </div>
         )}
       </div>
