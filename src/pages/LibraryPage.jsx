@@ -39,11 +39,12 @@ function SeriesPill({ series, num }) {
 }
 
 function BookCard({ book, view, onClick }) {
-  const [hov, setHov] = useState(false)
+  const [flipped, setFlipped] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
   const ub = book.user_books?.[0]
 
   if (view === 'list') {
+    const [hov, setHov] = useState(false)
     return (
       <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
         style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
@@ -60,23 +61,61 @@ function BookCard({ book, view, onClick }) {
     )
   }
 
+  const accentColor = ub?.rating ? 'var(--gold)' : 'var(--border)'
+  const accentOpacity = ub?.rating ? 0.8 : 0.25
+
+  const faceStyle = {
+    position: 'absolute', inset: 0,
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    borderRadius: 'var(--radius-lg)',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    background: 'var(--bg2)',
+    border: `1px solid var(--border)`,
+  }
+
   return (
-    <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
-      style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Spine accent */}
-      <div style={{ height: 3, background: ub?.rating ? `var(--gold)` : 'var(--border)', opacity: ub?.rating ? 0.8 : 0.25, transition: 'opacity 0.2s' }} />
-      <div style={{ padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{book.title}</div>
-        <div style={{ fontSize: 11, color: 'var(--text2)', letterSpacing: '0.01em' }}>{author}</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          <Stars rating={ub?.rating} />
-          <SeriesPill series={book.series} num={book.series_num} />
-        </div>
-        {ub?.one_thing && (
-          <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            "{ub.one_thing}"
+    <div
+      onClick={() => flipped ? onClick() : setFlipped(true)}
+      onMouseLeave={() => setFlipped(false)}
+      style={{ perspective: 1000, cursor: 'pointer', minHeight: 160 }}
+    >
+      <div style={{
+        position: 'relative', width: '100%', height: '100%', minHeight: 160,
+        transformStyle: 'preserve-3d',
+        transition: 'transform 0.45s cubic-bezier(0.4,0.2,0.2,1)',
+        transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+      }}>
+        {/* FRONT */}
+        <div style={faceStyle}>
+          <div style={{ height: 3, background: accentColor, opacity: accentOpacity }} />
+          <div style={{ padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{book.title}</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', letterSpacing: '0.01em' }}>{author}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+              <Stars rating={ub?.rating} />
+              <SeriesPill series={book.series} num={book.series_num} />
+            </div>
+            {ub?.one_thing && (
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                "{ub.one_thing}"
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* BACK */}
+        <div style={{ ...faceStyle, transform: 'rotateY(180deg)', background: 'var(--bg3)', border: `1px solid var(--gold)`, justifyContent: 'space-between' }}>
+          <div style={{ height: 3, background: 'var(--gold)', opacity: 0.6 }} />
+          <div style={{ padding: '14px 14px 0', flex: 1, overflow: 'hidden' }}>
+            <div style={{ fontSize: 11, fontFamily: 'var(--font-serif)', color: 'var(--gold)', marginBottom: 6, opacity: 0.8 }}>{book.title}</div>
+            {book.summary
+              ? <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{book.summary}</p>
+              : <p style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', margin: 0 }}>No description available.</p>
+            }
+          </div>
+          <div style={{ padding: '10px 14px 12px', fontSize: 11, color: 'var(--text3)', textAlign: 'center' }}>click to open</div>
+        </div>
       </div>
     </div>
   )
