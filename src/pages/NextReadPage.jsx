@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { BookPlus, BookMarked, Shuffle, BookOpen, ChevronRight, Star } from 'lucide-react'
 
 function Stars({ rating }) {
@@ -42,7 +44,9 @@ function BookRow({ book, onNavigate, onStart, starting }) {
   )
 }
 
-export default function NextReadPage({ navigate, theme, toggleTheme, session }) {
+export default function NextReadPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [sections, setSections] = useState([])
   const [wantBooks, setWantBooks] = useState([])  // flat list for random pick
   const [avgMap, setAvgMap] = useState({})
@@ -121,24 +125,24 @@ export default function NextReadPage({ navigate, theme, toggleTheme, session }) 
     await supabase.from('user_books')
       .update({ status: 'reading', date_started: new Date().toISOString().split('T')[0] })
       .eq('user_id', uid).eq('book_id', book.id)
-    navigate('book', { bookId: book.id })
+    navigate('/book/' + book.id)
   }
 
   if (loading) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Scanning the shelves…</div>
     </Shell>
   )
 
   if (empty) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--gold-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
           <BookPlus size={28} color="var(--gold)" />
         </div>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, marginBottom: 12 }}>Nothing on the list yet</div>
         <p style={{ color: 'var(--text2)', marginBottom: 28 }}>Add books you want to read and they'll show up here.</p>
-        <button onClick={() => navigate('add-want')}
+        <button onClick={() => navigate('/add-want')}
           style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
           Add a book
         </button>
@@ -149,7 +153,7 @@ export default function NextReadPage({ navigate, theme, toggleTheme, session }) 
   const total = sections.reduce((n, s) => n + s.books.length, 0)
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
 
         <div style={{ marginBottom: 36 }}>
@@ -189,7 +193,7 @@ export default function NextReadPage({ navigate, theme, toggleTheme, session }) 
                 style={{ flex: 1, background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '11px 20px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 14 }}>
                 <BookOpen size={15} /> {starting === pick.id ? 'Starting…' : "Let's read it"}
               </button>
-              <button onClick={() => navigate('book', { bookId: pick.id })}
+              <button onClick={() => navigate('/book/' + pick.id)}
                 style={{ padding: '11px 16px', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
                 View <ChevronRight size={14} />
               </button>
@@ -216,7 +220,7 @@ export default function NextReadPage({ navigate, theme, toggleTheme, session }) 
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {section.books.map(book => (
-                  <BookRow key={book.id} book={book} onNavigate={() => navigate('book', { bookId: book.id })} onStart={() => startReading(book)} starting={starting === book.id} />
+                  <BookRow key={book.id} book={book} onNavigate={() => navigate('/book/' + book.id)} onStart={() => startReading(book)} starting={starting === book.id} />
                 ))}
               </div>
             </div>
@@ -224,11 +228,11 @@ export default function NextReadPage({ navigate, theme, toggleTheme, session }) 
         </div>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24, marginTop: 40, display: 'flex', justifyContent: 'center', gap: 12 }}>
-          <button onClick={() => navigate('add-want')}
+          <button onClick={() => navigate('/add-want')}
             style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 22px', color: '#0f0e0c', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
             <BookPlus size={14} /> Add more books
           </button>
-          <button onClick={() => navigate('library')}
+          <button onClick={() => navigate('/library')}
             style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '10px 22px', color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
             <BookMarked size={14} /> Browse library
           </button>

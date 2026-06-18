@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { Search, Plus, Check, BookMarked, Globe } from 'lucide-react'
 
 const GENRE_KEYWORDS = [
@@ -83,7 +85,9 @@ async function enrichFromOpenLibrary(olKey, subjects) {
   return { genre, fiction, dewey, summary }
 }
 
-export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
+export default function AddWantPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [query, setQuery] = useState('')
   const [localResults, setLocalResults] = useState([])
   const [olResults, setOlResults] = useState([])
@@ -162,7 +166,7 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
   if (done) {
     const title = selected?.title || newBook.title
     return (
-      <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+      <Shell showBack>
         <div style={{ maxWidth: 560, margin: '60px auto', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#7a9e8a20', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <Check size={28} color="#7a9e8a" />
@@ -171,7 +175,7 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
           <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32, fontStyle: 'italic' }}>"{title}"</p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button onClick={reset} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>Add another</button>
-            <button onClick={() => navigate('home')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#0f0e0c', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Back home</button>
+            <button onClick={() => navigate('/')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#0f0e0c', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Back home</button>
           </div>
         </div>
       </Shell>
@@ -199,7 +203,7 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
   }
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <div style={{ marginBottom: 36 }}>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>A book I want</h1>

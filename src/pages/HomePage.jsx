@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { BookMarked, BookCheck, Library, HelpCircle, Compass, BarChart2, LogOut } from 'lucide-react'
 
 const tiles = [
-  { key:'debrief', icon:BookCheck,  label:'A book I finished',        sub:'Sit down for a debrief',   accent:'#c9963c', page:'debrief'   },
-  { key:'want',    icon:BookMarked,  label:'A book I want',            sub:'Add it to the list',        accent:'#7a9e8a', page:'add-want'  },
-  { key:'library', icon:Library,     label:'The library',              sub:'Browse, search, export',    accent:'#8a7eb8', page:'library'   },
-  { key:'fill',    icon:HelpCircle,  label:'Fill in the blanks',       sub:"Today's daily game",       accent:'#b87a5a', page:'fill'      },
-  { key:'next',    icon:Compass,     label:'What should I read next?', sub:'From your own shelf',       accent:'#6a9ab0', page:'next-read' },
-  { key:'stats',   icon:BarChart2,   label:'My reading life',          sub:'Stats & insights',          accent:'#9a7a60', page:'stats'     },
+  { key:'debrief', icon:BookCheck,  label:'A book I finished',        sub:'Sit down for a debrief',   accent:'#c9963c', path:'/debrief'   },
+  { key:'want',    icon:BookMarked,  label:'A book I want',            sub:'Add it to the list',        accent:'#7a9e8a', path:'/add-want'  },
+  { key:'library', icon:Library,     label:'The library',              sub:'Browse, search, export',    accent:'#8a7eb8', path:'/library'   },
+  { key:'fill',    icon:HelpCircle,  label:'Fill in the blanks',       sub:"Today's daily game",       accent:'#b87a5a', path:'/fill'      },
+  { key:'next',    icon:Compass,     label:'What should I read next?', sub:'From your own shelf',       accent:'#6a9ab0', path:'/next-read' },
+  { key:'stats',   icon:BarChart2,   label:'My reading life',          sub:'Stats & insights',          accent:'#9a7a60', path:'/stats'     },
 ]
 
-export default function HomePage({ navigate, theme, toggleTheme, session }) {
+export default function HomePage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [stats, setStats] = useState({ total:0, read:0, rated:0, streak:'—' })
   const name = session?.user?.user_metadata?.full_name?.split(' ')[0] || 'Sal'
 
@@ -31,7 +35,7 @@ export default function HomePage({ navigate, theme, toggleTheme, session }) {
   const greeting = () => { const h = new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening' }
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme}>
+    <Shell>
       <div style={{ maxWidth:860, margin:'0 auto' }}>
         <div style={{ marginBottom:48 }}>
           <p style={{ color:'var(--text3)', fontSize:13, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8 }}>{greeting()},</p>
@@ -50,7 +54,7 @@ export default function HomePage({ navigate, theme, toggleTheme, session }) {
           {tiles.map(tile => {
             const Icon = tile.icon
             return (
-              <button key={tile.key} onClick={() => navigate(tile.page)}
+              <button key={tile.key} onClick={() => navigate(tile.path)}
                 style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'28px 24px', textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:14, transition:'all 0.2s' }}
                 onMouseOver={e => { e.currentTarget.style.borderColor=tile.accent+'60'; e.currentTarget.style.background='var(--bg3)' }}
                 onMouseOut={e => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg2)' }}>

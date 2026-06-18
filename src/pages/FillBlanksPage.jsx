@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { ChevronRight, Check, Flame, SkipForward } from 'lucide-react'
 
 const FIELDS = [
@@ -38,7 +40,9 @@ function StarPicker({ value, onChange }) {
   )
 }
 
-export default function FillBlanksPage({ navigate, theme, toggleTheme, session }) {
+export default function FillBlanksPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [books, setBooks] = useState([])
   const [idx, setIdx] = useState(0)
   const [fieldIdx, setFieldIdx] = useState(0)
@@ -136,17 +140,17 @@ export default function FillBlanksPage({ navigate, theme, toggleTheme, session }
   }
 
   if (loading) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Finding the gaps…</div>
     </Shell>
   )
 
   if (noneFound) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, marginBottom: 12 }}>No read books yet</div>
         <p style={{ color: 'var(--text2)', marginBottom: 28 }}>Debrief a book first, then come back.</p>
-        <button onClick={() => navigate('debrief')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
+        <button onClick={() => navigate('/debrief')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
           Debrief a book
         </button>
       </div>
@@ -154,7 +158,7 @@ export default function FillBlanksPage({ navigate, theme, toggleTheme, session }
   )
 
   if (allDone) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#b87a5a18', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
           {streak > 0 ? <Flame size={32} color="#b87a5a" /> : <Check size={32} color="#7a9e8a" />}
@@ -164,7 +168,7 @@ export default function FillBlanksPage({ navigate, theme, toggleTheme, session }
         </h2>
         {streak > 0 && <p style={{ color: '#b87a5a', fontSize: 15, marginBottom: 8 }}>{streak} day streak 🔥</p>}
         {completed > 0 && <p style={{ color: 'var(--text2)', marginBottom: 28 }}>You filled in {completed} blank{completed !== 1 ? 's' : ''} today.</p>}
-        <button onClick={() => navigate('home')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
+        <button onClick={() => navigate('/')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
           Back home
         </button>
       </div>
@@ -177,7 +181,7 @@ export default function FillBlanksPage({ navigate, theme, toggleTheme, session }
   const bookAuthor = [currentBook?.author_first, currentBook?.author_last].filter(Boolean).join(' ')
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
         {/* Header */}

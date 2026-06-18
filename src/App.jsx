@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabase'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AppProvider, useApp } from './context/AppContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import LibraryPage from './pages/LibraryPage'
@@ -10,68 +10,38 @@ import NextReadPage from './pages/NextReadPage'
 import StatsPage from './pages/StatsPage'
 import BookPage from './pages/BookPage'
 
-export default function App() {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState('home')
-  const [pageData, setPageData] = useState(null)
-  const [theme, setTheme] = useState(() => localStorage.getItem('sl-theme') || 'dark')
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('sl-theme', theme)
-  }, [theme])
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const navigate = (p, data = null) => {
-    window.history.pushState({ page: p, data }, '', `/${p === 'home' ? '' : p}`)
-    setPage(p)
-    setPageData(data)
-    window.scrollTo(0, 0)
-  }
-
-  useEffect(() => {
-    const onPop = (e) => {
-      const p = e.state?.page || 'home'
-      const d = e.state?.data || null
-      setPage(p)
-      setPageData(d)
-      window.scrollTo(0, 0)
-    }
-    window.addEventListener('popstate', onPop)
-    // Replace the initial history entry so the first back press works
-    window.history.replaceState({ page: 'home', data: null }, '', '/')
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
+function AppRoutes() {
+  const { session, loading, theme, toggleTheme } = useApp()
 
   if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh" }}>
-      <div style={{ fontFamily:"var(--font-serif)", fontSize:20, color:"var(--text2)" }}>Opening the library…</div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--text2)' }}>Opening the library…</div>
     </div>
   )
 
-  if (!session) return <LoginPage theme={theme} toggleTheme={() => setTheme(t => t==="dark"?"light":"dark")} />
-
-  const props = { navigate, theme, toggleTheme: () => setTheme(t => t==="dark"?"light":"dark"), session, pageData }
+  if (!session) return <LoginPage theme={theme} toggleTheme={toggleTheme} />
 
   return (
-    <>
-      {page==="home"      && <HomePage      {...props} />}
-      {page==="library"   && <LibraryPage   {...props} />}
-      {page==="debrief"   && <DebriefPage   {...props} />}
-      {page==="add-want"  && <AddWantPage   {...props} />}
-      {page==="fill"      && <FillBlanksPage {...props} />}
-      {page==="next-read" && <NextReadPage  {...props} />}
-      {page==="stats"     && <StatsPage     {...props} />}
-      {page==="book"      && <BookPage      {...props} />}
-    </>
+    <Routes>
+      <Route path="/"          element={<HomePage />} />
+      <Route path="/library"   element={<LibraryPage />} />
+      <Route path="/book/:id"  element={<BookPage />} />
+      <Route path="/debrief"   element={<DebriefPage />} />
+      <Route path="/add-want"  element={<AddWantPage />} />
+      <Route path="/fill"      element={<FillBlanksPage />} />
+      <Route path="/next-read" element={<NextReadPage />} />
+      <Route path="/stats"     element={<StatsPage />} />
+      <Route path="*"          element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppProvider>
+        <AppRoutes />
+      </AppProvider>
+    </BrowserRouter>
   )
 }

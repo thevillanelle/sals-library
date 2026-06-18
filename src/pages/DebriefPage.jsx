@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { ChevronRight, SkipForward, Check, BookOpen } from 'lucide-react'
 
 const QUESTIONS = [
@@ -22,7 +24,9 @@ const inputStyle = {
   width: '100%', boxSizing: 'border-box', fontFamily: 'var(--font-sans)',
 }
 
-export default function DebriefPage({ navigate, theme, toggleTheme, session }) {
+export default function DebriefPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState({})
   const [bookSearch, setBookSearch] = useState('')
@@ -94,7 +98,7 @@ export default function DebriefPage({ navigate, theme, toggleTheme, session }) {
     ].filter(Boolean)
 
     return (
-      <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+      <Shell showBack>
         <div style={{ maxWidth: 560, margin: '40px auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--gold-pale)', border: '1px solid var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -123,7 +127,7 @@ export default function DebriefPage({ navigate, theme, toggleTheme, session }) {
               style={{ flex: 1, padding: '11px 20px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>
               Debrief another
             </button>
-            <button onClick={() => navigate('book', { bookId: selectedBook?.id })}
+            <button onClick={() => navigate('/book/' + selectedBook?.id)}
               style={{ flex: 1, padding: '11px 20px', background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
               View book
             </button>
@@ -135,7 +139,7 @@ export default function DebriefPage({ navigate, theme, toggleTheme, session }) {
 
   // ── Main flow ────────────────────────────────────────────────────
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 580, margin: '0 auto' }}>
 
         {/* Progress bar */}

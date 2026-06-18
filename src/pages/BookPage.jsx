@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { Star, BookOpen, ArrowLeft } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
@@ -107,8 +109,10 @@ async function fetchSummaryFromOpenLibrary(title, authorLast) {
   } catch { return null }
 }
 
-export default function BookPage({ navigate, theme, toggleTheme, session, pageData }) {
-  const bookId = pageData?.bookId
+export default function BookPage() {
+  const { id: bookId } = useParams()
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [book, setBook] = useState(null)
   const [ub, setUb] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -149,13 +153,13 @@ export default function BookPage({ navigate, theme, toggleTheme, session, pageDa
   }
 
   if (loading) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
+    <Shell showBack backPage="/library">
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Opening…</div>
     </Shell>
   )
 
   if (!book) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
+    <Shell showBack backPage="/library">
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)' }}>Book not found.</div>
     </Shell>
   )
@@ -164,12 +168,12 @@ export default function BookPage({ navigate, theme, toggleTheme, session, pageDa
   const sc = statusColors[ub?.status] || statusColors.read
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack backPage="library">
+    <Shell showBack backPage="/library">
       <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 80 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <button onClick={() => navigate('library')}
+          <button onClick={() => navigate('/library')}
             style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, padding: 0, marginBottom: 20 }}>
             <ArrowLeft size={14} /> Back to library
           </button>

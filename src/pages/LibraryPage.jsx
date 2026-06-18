@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import * as XLSX from 'xlsx'
 import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react'
 
@@ -196,7 +198,9 @@ function groupBySeries(books) {
   return { seriesMap, sortedSeries, standalone }
 }
 
-export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
+export default function LibraryPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [allBooks, setAllBooks] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -217,7 +221,7 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   useEffect(() => { localStorage.setItem('sl-lib-sort', sort) }, [sort])
   useEffect(() => { sessionStorage.setItem('sl-lib-page', currentPage) }, [currentPage])
 
-  const goToBook = (book) => navigate('book', { bookId: book.id })
+  const goToBook = (book) => navigate('/book/' + book.id)
 
   const uid = session.user.id
 
@@ -314,7 +318,7 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   })
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
 
         {/* Header row */}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
+import { useApp } from '../context/AppContext'
 import { BookCheck, Star, TrendingUp, BookMarked, Calendar, Library, Layers, PenLine } from 'lucide-react'
 
 function StatCard({ icon: Icon, accent, label, value, sub }) {
@@ -89,7 +91,9 @@ function DonutStat({ label, value, total, color }) {
   )
 }
 
-export default function StatsPage({ navigate, theme, toggleTheme, session }) {
+export default function StatsPage() {
+  const navigate = useNavigate()
+  const { session } = useApp()
   const [tab, setTab] = useState('reading')
   const [reading, setReading] = useState(null)
   const [library, setLibrary] = useState(null)
@@ -224,13 +228,13 @@ export default function StatsPage({ navigate, theme, toggleTheme, session }) {
   })
 
   if (loading) return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Crunching the numbers…</div>
     </Shell>
   )
 
   return (
-    <Shell navigate={navigate} theme={theme} toggleTheme={toggleTheme} showBack>
+    <Shell showBack>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
         <div style={{ marginBottom: 32 }}>
