@@ -8,6 +8,7 @@ import AddWantPage from './pages/AddWantPage'
 import FillBlanksPage from './pages/FillBlanksPage'
 import NextReadPage from './pages/NextReadPage'
 import StatsPage from './pages/StatsPage'
+import BookPage from './pages/BookPage'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -51,6 +52,7 @@ export default function App() {
       {page==="fill"      && <FillBlanksPage {...props} />}
       {page==="next-read" && <NextReadPage  {...props} />}
       {page==="stats"     && <StatsPage     {...props} />}
+      {page==="book"      && <BookPage      {...props} />}
     </>
   )
 }

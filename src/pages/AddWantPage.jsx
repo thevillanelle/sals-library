@@ -1,16 +1,34 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
-import { Search, Plus, Check, BookMarked } from 'lucide-react'
+import { Search, Plus, Check, BookMarked, Globe } from 'lucide-react'
+
+async function searchOpenLibrary(query) {
+  try {
+    const q = encodeURIComponent(query)
+    const res = await fetch(`https://openlibrary.org/search.json?q=${q}&limit=8&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.docs || []).map(d => ({
+      _olKey: d.key,
+      title: d.title,
+      author_first: d.author_name?.[0]?.split(' ').slice(0, -1).join(' ') || '',
+      author_last: d.author_name?.[0]?.split(' ').slice(-1)[0] || d.author_name?.[0] || '',
+      year_published: d.first_publish_year || null,
+      page_count: d.number_of_pages_median || null,
+    }))
+  } catch { return [] }
+}
 
 export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
+  const [localResults, setLocalResults] = useState([])
+  const [olResults, setOlResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [selected, setSelected] = useState(null)
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
-  const [noMatch, setNoMatch] = useState(false)
+  const [showManual, setShowManual] = useState(false)
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
 
   const uid = session.user.id
@@ -18,15 +36,23 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
   const search = async () => {
     if (!query.trim()) return
     setSearching(true)
-    setResults([])
-    setNoMatch(false)
-    const { data } = await supabase.from('books')
-      .select('id,title,author_first,author_last,series,series_num')
-      .or(`title.ilike.%${query}%,author_last.ilike.%${query}%`)
-      .limit(10)
+    setLocalResults([])
+    setOlResults([])
+    setShowManual(false)
+
+    const [{ data: local }, ol] = await Promise.all([
+      supabase.from('books')
+        .select('id,title,author_first,author_last,series,series_num')
+        .or(`title.ilike.%${query}%,author_last.ilike.%${query}%`)
+        .limit(8),
+      searchOpenLibrary(query),
+    ])
+
+    setLocalResults(local || [])
+    // Only show OL results not already in local
+    const localTitles = new Set((local || []).map(b => b.title.toLowerCase()))
+    setOlResults(ol.filter(b => !localTitles.has(b.title.toLowerCase())))
     setSearching(false)
-    setResults(data || [])
-    if ((data || []).length === 0) setNoMatch(true)
   }
 
   const handleKey = e => { if (e.key === 'Enter') search() }
@@ -36,10 +62,11 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
     let bookId = selected?.id
 
     if (!bookId) {
-      const { data: inserted } = await supabase.from('books')
-        .insert({ title: newBook.title.trim(), author_first: newBook.author_first.trim() || null, author_last: newBook.author_last.trim() || null, series: newBook.series.trim() || null, series_num: newBook.series_num ? Number(newBook.series_num) : null })
-        .select('id')
-        .single()
+      const payload = selected?._olKey
+        ? { title: selected.title, author_first: selected.author_first || null, author_last: selected.author_last || null, year_published: selected.year_published || null, page_count: selected.page_count || null }
+        : { title: newBook.title.trim(), author_first: newBook.author_first.trim() || null, author_last: newBook.author_last.trim() || null, series: newBook.series.trim() || null, series_num: newBook.series_num ? Number(newBook.series_num) : null }
+
+      const { data: inserted } = await supabase.from('books').insert(payload).select('id').single()
       bookId = inserted?.id
     }
 
@@ -50,6 +77,8 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
     setSaving(false)
     setDone(true)
   }
+
+  const reset = () => { setDone(false); setSelected(null); setQuery(''); setLocalResults([]); setOlResults([]); setShowManual(false); setNewBook({ title: '', author_first: '', author_last: '', series: '', series_num: '' }) }
 
   const inputStyle = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 14px', color: 'var(--text)', fontSize: 15, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
@@ -64,17 +93,31 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 400, marginBottom: 8 }}>Added to the list</h2>
           <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32, fontStyle: 'italic' }}>"{title}"</p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button onClick={() => { setDone(false); setSelected(null); setQuery(''); setResults([]); setNoMatch(false); setNewBook({ title: '', author_first: '', author_last: '', series: '', series_num: '' }) }}
-              style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>
-              Add another
-            </button>
-            <button onClick={() => navigate('home')}
-              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#0f0e0c', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
-              Back home
-            </button>
+            <button onClick={reset} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>Add another</button>
+            <button onClick={() => navigate('home')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#0f0e0c', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Back home</button>
           </div>
         </div>
       </Shell>
+    )
+  }
+
+  const ResultRow = ({ book, icon, onPick }) => {
+    const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
+    return (
+      <button onClick={() => onPick(book)}
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, width: '100%', transition: 'background 0.15s' }}
+        onMouseOver={e => e.currentTarget.style.background = 'var(--bg3)'}
+        onMouseOut={e => e.currentTarget.style.background = 'var(--bg2)'}>
+        {icon}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15 }}>{book.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
+            {author}
+            {book.series ? ` · ${book.series}${book.series_num ? ` #${book.series_num}` : ''}` : ''}
+            {book.year_published ? ` · ${book.year_published}` : ''}
+          </div>
+        </div>
+      </button>
     )
   }
 
@@ -83,12 +126,12 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <div style={{ marginBottom: 36 }}>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>A book I want</h1>
-          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Search the library, or add something new.</p>
+          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Search the library or the whole internet.</p>
         </div>
 
         {!selected && (
           <>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
               <div style={{ position: 'relative', flexGrow: 1 }}>
                 <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
                 <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKey}
@@ -96,34 +139,39 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
                   style={{ ...inputStyle, paddingLeft: 38 }} />
               </div>
               <button onClick={search} disabled={searching || !query.trim()}
-                style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', opacity: (!query.trim()) ? 0.5 : 1 }}>
+                style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', opacity: !query.trim() ? 0.5 : 1 }}>
                 {searching ? '…' : 'Search'}
               </button>
             </div>
 
-            {results.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
-                {results.map(b => {
-                  const author = [b.author_first, b.author_last].filter(Boolean).join(' ')
-                  return (
-                    <button key={b.id} onClick={() => setSelected(b)}
-                      style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'background 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.background = 'var(--bg3)'}
-                      onMouseOut={e => e.currentTarget.style.background = 'var(--bg2)'}>
-                      <BookMarked size={16} color="var(--gold)" style={{ flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15 }}>{b.title}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{author}{b.series ? ` · ${b.series}${b.series_num ? ` #${b.series_num}` : ''}` : ''}</div>
-                      </div>
-                    </button>
-                  )
-                })}
+            {localResults.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 8 }}>In your library</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {localResults.map(b => <ResultRow key={b.id} book={b} icon={<BookMarked size={16} color="var(--gold)" style={{ flexShrink: 0 }} />} onPick={setSelected} />)}
+                </div>
               </div>
             )}
 
-            {noMatch && (
-              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, marginBottom: 24 }}>
-                <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>Not in the library yet. Add it:</p>
+            {olResults.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 8 }}>From the web</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {olResults.map((b, i) => <ResultRow key={i} book={b} icon={<Globe size={16} color="var(--text3)" style={{ flexShrink: 0 }} />} onPick={setSelected} />)}
+                </div>
+              </div>
+            )}
+
+            {(localResults.length > 0 || olResults.length > 0) && (
+              <button onClick={() => setShowManual(m => !m)}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0, marginBottom: 16 }}>
+                Not seeing it? Add manually
+              </button>
+            )}
+
+            {(showManual || (query && localResults.length === 0 && olResults.length === 0 && !searching)) && (
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24 }}>
+                <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>Add it manually:</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <input value={newBook.title} onChange={e => setNewBook(b => ({ ...b, title: e.target.value }))} placeholder="Title *" style={inputStyle} />
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -154,14 +202,12 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 500, marginBottom: 2 }}>{selected.title}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{[selected.author_first, selected.author_last].filter(Boolean).join(' ')}</div>
                 {selected.series && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{selected.series}{selected.series_num ? ` #${selected.series_num}` : ''}</div>}
+                {selected.year_published && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{selected.year_published}{selected.page_count ? ` · ${selected.page_count} pages` : ''}</div>}
               </div>
             </div>
             <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24 }}>Add this to your want-to-read list?</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setSelected(null); setResults([]) }}
-                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>
-                Cancel
-              </button>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
               <button onClick={save} disabled={saving}
                 style={{ background: '#7a9e8a', border: 'none', borderRadius: 'var(--radius)', padding: '10px 24px', color: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Plus size={15} /> {saving ? 'Adding…' : 'Add to list'}
