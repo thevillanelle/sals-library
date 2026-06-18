@@ -5,7 +5,6 @@ import * as XLSX from 'xlsx'
 import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, ArrowUpDown } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
-const statusColors = { read: '#7a9e8a', 'want-to-read': '#8a7eb8', reading: '#6a9ab0', dnf: '#b87a5a' }
 const PAGE_SIZE = 24
 
 const SORT_OPTIONS = [
@@ -96,6 +95,7 @@ function BookCard({ book, view, onClick }) {
               <Stars rating={ub?.rating} />
               <SeriesPill series={book.series} num={book.series_num} />
             </div>
+            {ub?.status && (() => { const c = statusColors[ub.status] || statusColors.read; return <span style={{ alignSelf: 'flex-start', background: c.bg, border: `1px solid ${c.border}`, borderRadius: 20, padding: '2px 8px', fontSize: 10, color: c.text }}>{statusLabels[ub.status] || ub.status}</span> })()}
             {ub?.one_thing && (
               <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 "{ub.one_thing}"
@@ -155,26 +155,78 @@ function DetailRow({ label, value }) {
   )
 }
 
-function BookModal({ book, onClose }) {
+const statusColors = {
+  read: { bg: '#1a3a1a', border: '#2d6b2d', text: '#6dbf6d' },
+  reading: { bg: '#1a2f3a', border: '#2d5a6b', text: '#6daebf' },
+  'want-to-read': { bg: '#2a2515', border: '#5a4d1a', text: '#c4a84a' },
+  dnf: { bg: '#2a1515', border: '#5a2020', text: '#bf6d6d' },
+}
+
+function StatusPill({ status, onChange }) {
+  const [open, setOpen] = useState(false)
+  const options = Object.entries(statusLabels)
+  const colors = statusColors[status] || statusColors.read
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 20, padding: '4px 12px', fontSize: 12, color: colors.text, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)' }}>
+        {statusLabels[status] || status}
+        <span style={{ opacity: 0.6, fontSize: 10 }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '110%', left: 0, background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', zIndex: 300, minWidth: 140, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+          {options.map(([val, label]) => {
+            const c = statusColors[val] || statusColors.read
+            return (
+              <button key={val} onClick={() => { onChange(val); setOpen(false) }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', background: val === status ? 'var(--bg2)' : 'none', border: 'none', color: c.text, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BookModal({ book, onClose, session }) {
   const ub = book.user_books?.[0] || {}
+  const [status, setStatus] = useState(ub.status || 'read')
+  const [saving, setSaving] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
+
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
+
+  const handleStatusChange = async (newStatus) => {
+    setStatus(newStatus)
+    setSaving(true)
+    await supabase.from('user_books')
+      .update({ status: newStatus })
+      .eq('user_id', session.user.id)
+      .eq('book_id', book.id)
+    setSaving(false)
+  }
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-lg)', padding: 32, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer' }}><X size={18} /></button>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 400, marginBottom: 4, paddingRight: 24 }}>{book.title}</h2>
         <p style={{ color: 'var(--text2)', marginBottom: 4 }}>{author}</p>
-        {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 4 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
+        {book.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 8 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <StatusPill status={status} onChange={handleStatusChange} />
+          {saving && <span style={{ fontSize: 11, color: 'var(--text3)' }}>saving…</span>}
+        </div>
         {book.summary && (
           <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, marginTop: 12 }}>{book.summary}</p>
         )}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {ub.status && <DetailRow label="Status" value={statusLabels[ub.status] || ub.status} />}
           {ub.rating && <DetailRow label="Rating" value={<Stars rating={ub.rating} />} />}
           {ub.date_read && <DetailRow label="Date read" value={new Date(ub.date_read).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} />}
           {ub.one_thing && <DetailRow label="One thing" value={ub.one_thing} />}
@@ -459,7 +511,7 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
         )}
       </div>
 
-      {selected && <BookModal book={selected} onClose={() => setSelected(null)} />}
+      {selected && <BookModal book={selected} onClose={() => setSelected(null)} session={session} />}
     </Shell>
   )
 }
