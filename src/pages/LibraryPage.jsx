@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import * as XLSX from 'xlsx'
-import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, ArrowUpDown } from 'lucide-react'
+import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const PAGE_SIZE = 24
@@ -45,7 +45,7 @@ function BookCard({ book, view, onClick }) {
 
   if (view === 'list') {
     return (
-      <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
+      <div onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
         style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: hov ? 'var(--bg3)' : 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all 0.15s' }}>
         <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: ub?.rating ? 'var(--gold)' : 'var(--border)', flexShrink: 0, opacity: ub?.rating ? 0.7 : 0.3 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -71,7 +71,7 @@ function BookCard({ book, view, onClick }) {
   }
 
   return (
-    <div onClick={onClick} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
+    <div onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ height: 3, background: ub?.rating ? 'var(--gold)' : 'var(--border)', opacity: ub?.rating ? 0.8 : 0.25 }} />
       <div style={{ padding: '14px 14px 12px', display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
@@ -322,7 +322,7 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
             <button onClick={() => setGroupSeries(g => !g)} title="Group by series" style={iconBtnStyle(groupSeries)}>
               <Layers size={14} />
             </button>
-            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(false)}>
+            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(view === 'list')}>
               {view === 'grid' ? <List size={14} /> : <Grid size={14} />}
             </button>
             <button onClick={exportExcel} title="Export to Excel"

@@ -20,7 +20,7 @@ function BookPill({ book, authorAvg }) {
   const [hov, setHov] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
   return (
-    <div onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ background: hov ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${hov ? 'var(--border2)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '16px 18px', transition: 'all 0.15s' }}>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, marginBottom: 3, lineHeight: 1.3 }}>{book.title}</div>
       <div style={{ fontSize: 12, color: 'var(--text2)' }}>{author}</div>
