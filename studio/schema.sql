@@ -83,22 +83,7 @@ CREATE POLICY sessions_upsert ON public.reading_sessions
   FOR UPDATE TO authenticated USING (auth.uid() = user_id);
 
 
--- 3. SEED TRIGGER
-
-CREATE OR REPLACE FUNCTION seed_user_library()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.user_books (user_id, book_id, status)
-  SELECT NEW.id, b.id, 'read' FROM public.books b
-  ON CONFLICT (user_id, book_id) DO NOTHING;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION seed_user_library();
+-- 3. (no seed trigger — each user starts with their own fresh library)
 
 -- 4. BOOKS (931)
 

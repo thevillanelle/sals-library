@@ -5,24 +5,47 @@ import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
 import { BookMarked, BookCheck, Library, HelpCircle, Compass, BarChart2, LogOut, Layers, Users, Swords, BookOpen } from 'lucide-react'
 
-const tiles = [
-  { key:'debrief',  icon:BookCheck,  label:'A book I finished',        sub:'Sit down for a debrief',       accent:'#c9963c', path:'/debrief'   },
-  { key:'want',     icon:BookMarked, label:'A book I want',             sub:'Add it to the list',            accent:'#7a9e8a', path:'/add-want'  },
-  { key:'library',  icon:Library,    label:'The library',               sub:'Browse, search, export',        accent:'#8a7eb8', path:'/library'   },
-  { key:'fill',     icon:HelpCircle, label:'Fill in the blanks',        sub:"Today's daily game",           accent:'#b87a5a', path:'/fill'      },
-  { key:'next',     icon:Compass,    label:'What should I read next?',  sub:'From your own shelf',           accent:'#6a9ab0', path:'/next-read' },
-  { key:'versus',   icon:Swords,     label:'Head to Head',              sub:'Pick a fight between two books',accent:'#9a6a8a', path:'/versus'    },
-  { key:'series',   icon:Layers,     label:'Series Tracker',            sub:'See every series, spot the gaps',accent:'#6a9070', path:'/series'   },
-  { key:'stats',    icon:BarChart2,  label:'My reading life',           sub:'Stats & insights',              accent:'#9a7a60', path:'/stats'     },
+const mainTiles = [
   { key:'guide',    icon:BookOpen,   label:'How to use this app',       sub:'A guide written just for you',  accent:'#7a6ab0', path:'/guide'     },
+  { key:'library',  icon:Library,    label:'The library',               sub:'Browse, search, export',        accent:'#8a7eb8', path:'/library'   },
+  { key:'debrief',  icon:BookCheck,  label:'A book I finished',         sub:'Sit down for a debrief',        accent:'#c9963c', path:'/debrief'   },
+  { key:'stats',    icon:BarChart2,  label:'My Dashboard',              sub:'Stats & insights',              accent:'#9a7a60', path:'/stats'     },
+  { key:'series',   icon:Layers,     label:'Series Tracker',            sub:'See every series, spot the gaps',accent:'#6a9070', path:'/series'   },
+  { key:'want',     icon:BookMarked, label:'Add a book',                sub:'Add to your want-to-read list', accent:'#7a9e8a', path:'/add-want'  },
 ]
+
+const gameTiles = [
+  { key:'next',     icon:Compass,    label:'What should I read next?',  sub:'From your own shelf',           accent:'#6a9ab0', path:'/next-read' },
+  { key:'versus',   icon:Swords,     label:'Head to Head',              sub:'Pick a fight between two books', accent:'#9a6a8a', path:'/versus'    },
+  { key:'fill',     icon:HelpCircle, label:'Fill in the blanks',        sub:'Go back and add missing notes',  accent:'#b87a5a', path:'/fill'      },
+]
+
+function Tile({ tile, navigate }) {
+  const Icon = tile.icon
+  return (
+    <button onClick={() => navigate(tile.path)}
+      style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'24px 20px', textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:12, transition:'all 0.2s' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor=tile.accent+'60'; e.currentTarget.style.background='var(--bg3)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg2)' }}>
+      <div style={{ width:40, height:40, borderRadius:10, background:tile.accent+'18', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <Icon size={18} color={tile.accent} />
+      </div>
+      <div>
+        <div style={{ fontFamily:'var(--font-serif)', fontSize:16, fontWeight:500, marginBottom:3, lineHeight:1.3 }}>{tile.label}</div>
+        <div style={{ fontSize:12, color:'var(--text2)' }}>{tile.sub}</div>
+      </div>
+    </button>
+  )
+}
 
 export default function HomePage() {
   const navigate = useNavigate()
   const { session } = useApp()
   const [stats, setStats] = useState({ total:0, read:0, rated:0, streak:'—' })
   const [onThisDay, setOnThisDay] = useState([])
-  const name = session?.user?.user_metadata?.full_name?.split(' ')[0] || 'Sal'
+  const name = session?.user?.user_metadata?.full_name?.split(' ')[0]
+    || session?.user?.email?.split('@')[0]
+    || 'Reader'
 
   useEffect(() => {
     const uid = session.user.id
@@ -85,25 +108,19 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Tiles */}
+        {/* Main tiles */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:24 }}>
+          {mainTiles.map(tile => <Tile key={tile.key} tile={tile} navigate={navigate} />)}
+        </div>
+
+        {/* Games section */}
+        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+          <div style={{ height:1, background:'var(--border)', flex:1 }} />
+          <span style={{ fontSize:11, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em' }}>Games</span>
+          <div style={{ height:1, background:'var(--border)', flex:1 }} />
+        </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:48 }}>
-          {tiles.map(tile => {
-            const Icon = tile.icon
-            return (
-              <button key={tile.key} onClick={() => navigate(tile.path)}
-                style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'24px 20px', textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:12, transition:'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor=tile.accent+'60'; e.currentTarget.style.background='var(--bg3)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg2)' }}>
-                <div style={{ width:40, height:40, borderRadius:10, background:tile.accent+'18', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <Icon size={18} color={tile.accent} />
-                </div>
-                <div>
-                  <div style={{ fontFamily:'var(--font-serif)', fontSize:16, fontWeight:500, marginBottom:3, lineHeight:1.3 }}>{tile.label}</div>
-                  <div style={{ fontSize:12, color:'var(--text2)' }}>{tile.sub}</div>
-                </div>
-              </button>
-            )
-          })}
+          {gameTiles.map(tile => <Tile key={tile.key} tile={tile} navigate={navigate} />)}
         </div>
 
         <div style={{ borderTop:'1px solid var(--border)', paddingTop:24, display:'flex', justifyContent:'flex-end' }}>
