@@ -3,6 +3,39 @@ import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { Search, Plus, Check, BookMarked, Globe } from 'lucide-react'
 
+const GENRE_KEYWORDS = [
+  ['Science Fiction',    ['science fiction', 'sci-fi', 'space opera', 'cyberpunk', 'dystopian']],
+  ['Fantasy',            ['fantasy', 'magic', 'dragons', 'wizards', 'sword and sorcery']],
+  ['Horror',             ['horror', 'supernatural fiction', 'ghost stories']],
+  ['Mystery',            ['mystery', 'detective', 'whodunit', 'noir']],
+  ['Thriller',           ['thriller', 'suspense', 'espionage', 'spy']],
+  ['Crime',              ['crime', 'murder', 'heist', 'true crime']],
+  ['Historical Fiction', ['historical fiction', 'historical novel']],
+  ['Literary Fiction',   ['literary fiction', 'psychological fiction']],
+  ['Biography',          ['biography', 'autobiography', 'memoir', 'personal memoirs']],
+  ['History',            ['history', 'world war', 'civil war', 'military history']],
+  ['Science',            ['science', 'natural history', 'evolution', 'physics', 'biology']],
+  ['Adventure',          ['adventure', 'survival', 'exploration']],
+  ['Western',            ['western stories', 'frontier']],
+  ['Romance',            ['romance', 'love stories']],
+  ['Classic',            ['classics', '19th century fiction', 'victorian']],
+]
+
+function deriveGenre(subjects) {
+  const lower = subjects.map(s => s.toLowerCase())
+  for (const [genre, keywords] of GENRE_KEYWORDS) {
+    if (keywords.some(k => lower.some(s => s.includes(k)))) return genre
+  }
+  return null
+}
+
+function deriveFiction(subjects) {
+  const lower = subjects.join(' ').toLowerCase()
+  if (/\bnonfiction\b|non-fiction|biography|autobiography|memoir|history|true crime|science|essays/.test(lower)) return false
+  if (/\bfiction\b|novel|stories/.test(lower)) return true
+  return null
+}
+
 async function searchOpenLibrary(query) {
   try {
     const q = encodeURIComponent(query)
@@ -11,6 +44,7 @@ async function searchOpenLibrary(query) {
     const data = await res.json()
     return (data.docs || []).map(d => ({
       _olKey: d.key,
+      _subjects: d.subject || [],
       title: d.title,
       author_first: d.author_name?.[0]?.split(' ').slice(0, -1).join(' ') || '',
       author_last: d.author_name?.[0]?.split(' ').slice(-1)[0] || d.author_name?.[0] || '',
@@ -18,6 +52,35 @@ async function searchOpenLibrary(query) {
       page_count: d.number_of_pages_median || null,
     }))
   } catch { return [] }
+}
+
+async function enrichFromOpenLibrary(olKey, subjects) {
+  const genre = deriveGenre(subjects)
+  const fiction = deriveFiction(subjects)
+
+  let dewey = null
+  let summary = null
+
+  try {
+    const workId = olKey.replace('/works/', '')
+    const [edRes, workRes] = await Promise.all([
+      fetch(`https://openlibrary.org/works/${workId}/editions.json?limit=10`),
+      fetch(`https://openlibrary.org${olKey}.json`),
+    ])
+    if (edRes.ok) {
+      const edData = await edRes.json()
+      const withDewey = (edData.entries || []).find(e => e.dewey_decimal_class?.length)
+      const raw = withDewey?.dewey_decimal_class?.find(d => /^\d/.test(d)) || withDewey?.dewey_decimal_class?.[0]
+      if (raw) dewey = raw.trim()
+    }
+    if (workRes.ok) {
+      const workData = await workRes.json()
+      const desc = workData.description
+      if (desc) summary = typeof desc === 'string' ? desc : desc.value || null
+    }
+  } catch { /* best effort */ }
+
+  return { genre, fiction, dewey, summary }
 }
 
 export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
@@ -62,9 +125,23 @@ export default function AddWantPage({ navigate, theme, toggleTheme, session }) {
     let bookId = selected?.id
 
     if (!bookId) {
-      const payload = selected?._olKey
-        ? { title: selected.title, author_first: selected.author_first || null, author_last: selected.author_last || null, year_published: selected.year_published || null, page_count: selected.page_count || null }
-        : { title: newBook.title.trim(), author_first: newBook.author_first.trim() || null, author_last: newBook.author_last.trim() || null, series: newBook.series.trim() || null, series_num: newBook.series_num ? Number(newBook.series_num) : null }
+      let payload
+      if (selected?._olKey) {
+        const enriched = await enrichFromOpenLibrary(selected._olKey, selected._subjects || [])
+        payload = {
+          title: selected.title,
+          author_first: selected.author_first || null,
+          author_last: selected.author_last || null,
+          year_published: selected.year_published || null,
+          page_count: selected.page_count || null,
+          genre: enriched.genre || null,
+          fiction: enriched.fiction,
+          dewey: enriched.dewey || null,
+          summary: enriched.summary || null,
+        }
+      } else {
+        payload = { title: newBook.title.trim(), author_first: newBook.author_first.trim() || null, author_last: newBook.author_last.trim() || null, series: newBook.series.trim() || null, series_num: newBook.series_num ? Number(newBook.series_num) : null }
+      }
 
       const { data: inserted } = await supabase.from('books').insert(payload).select('id').single()
       bookId = inserted?.id
