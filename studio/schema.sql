@@ -374,7 +374,7 @@ INSERT INTO books (title, author_first, author_last, series, series_num) VALUES
   ('A Darkness More Than Night (Harry Bosch)', 'Michael', 'Connelly', NULL, NULL),
   ('The Late Show', 'Michael', 'Connelly', 'Renee Ballard', '1'),
   ('Two Kinds of Truth', 'Michael', 'Connelly', 'Harry Bosch', '20'),
-  ('Dark Sacred Night', 'Michael', 'Connelly', 'Harry Bosch #21;
+  ('Dark Sacred Night', 'Michael', 'Connelly', 'Harry Bosch', '21'),
 
 -- ── 5. SEED EXISTING USERS ───────────────────────────────────
 
