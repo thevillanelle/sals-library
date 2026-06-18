@@ -208,10 +208,15 @@ export default function LibraryPage({ navigate, theme, toggleTheme, session }) {
   const [filterFiction, setFilterFiction] = useState('')
   const [authors, setAuthors] = useState([])
   const [genres, setGenres] = useState([])
-  const [view, setView] = useState('grid')
-  const [sort, setSort] = useState('author_asc')
+  const [view, setView] = useState(() => localStorage.getItem('sl-lib-view') || 'grid')
+  const [sort, setSort] = useState(() => localStorage.getItem('sl-lib-sort') || 'author_asc')
   const [groupSeries, setGroupSeries] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(() => Number(sessionStorage.getItem('sl-lib-page')) || 1)
+
+  useEffect(() => { localStorage.setItem('sl-lib-view', view) }, [view])
+  useEffect(() => { localStorage.setItem('sl-lib-sort', sort) }, [sort])
+  useEffect(() => { sessionStorage.setItem('sl-lib-page', currentPage) }, [currentPage])
+
   const goToBook = (book) => navigate('book', { bookId: book.id })
 
   const uid = session.user.id

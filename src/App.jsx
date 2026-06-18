@@ -31,7 +31,26 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const navigate = (p, data = null) => { setPage(p); setPageData(data); window.scrollTo(0, 0) }
+  const navigate = (p, data = null) => {
+    window.history.pushState({ page: p, data }, '', `/${p === 'home' ? '' : p}`)
+    setPage(p)
+    setPageData(data)
+    window.scrollTo(0, 0)
+  }
+
+  useEffect(() => {
+    const onPop = (e) => {
+      const p = e.state?.page || 'home'
+      const d = e.state?.data || null
+      setPage(p)
+      setPageData(d)
+      window.scrollTo(0, 0)
+    }
+    window.addEventListener('popstate', onPop)
+    // Replace the initial history entry so the first back press works
+    window.history.replaceState({ page: 'home', data: null }, '', '/')
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh" }}>
