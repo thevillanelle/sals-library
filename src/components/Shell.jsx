@@ -24,28 +24,47 @@ function DateWeather({ weather }) {
   )
 }
 
-const SIZE_LABELS = { sm: 'Sm', md: 'Md', lg: 'Lg', xl: 'XL' }
+const SIZE_LABELS = ['Sm', 'Md', 'Lg', 'XL']
 
-function TextSizeToggle({ textSize, cycleTextSize }) {
+function TextSizeSlider({ textSizeIndex, setTextSizeByIndex }) {
   return (
-    <button
-      onClick={cycleTextSize}
-      title="Adjust text size"
-      style={{
-        background: 'none', border: '1px solid var(--border2)', borderRadius: 8,
-        height: 34, padding: '0 10px', display: 'flex', alignItems: 'center', gap: 5,
-        color: 'var(--text2)', cursor: 'pointer', fontSize: 12, fontWeight: 500,
-      }}
-    >
-      <span style={{ fontSize: 15, lineHeight: 1, color: 'var(--gold)' }}>A</span>
-      <span style={{ fontSize: 10, color: 'var(--text3)' }}>{SIZE_LABELS[textSize]}</span>
-    </button>
+    <div title="Adjust text size" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '4px 6px' }}>
+      <span style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1, userSelect: 'none' }}>{SIZE_LABELS[textSizeIndex]}</span>
+      <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Track notches */}
+        <div style={{ position: 'absolute', right: 'calc(50% + 10px)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 40, pointerEvents: 'none' }}>
+          {SIZE_LABELS.map((_, i) => (
+            <div key={i} style={{ width: i === textSizeIndex ? 6 : 4, height: 1.5, background: i === textSizeIndex ? 'var(--gold)' : 'var(--border2)', borderRadius: 1, transition: 'all 0.15s' }} />
+          ))}
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={3}
+          step={1}
+          value={textSizeIndex}
+          onChange={e => setTextSizeByIndex(Number(e.target.value))}
+          style={{
+            writingMode: 'vertical-lr',
+            direction: 'rtl',
+            WebkitAppearance: 'slider-vertical',
+            appearance: 'slider-vertical',
+            width: 20,
+            height: 40,
+            cursor: 'pointer',
+            accentColor: 'var(--gold)',
+            background: 'transparent',
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 13, lineHeight: 1, color: 'var(--gold)', fontFamily: 'var(--font-serif)', userSelect: 'none' }}>A</span>
+    </div>
   )
 }
 
 export default function Shell({ children, showBack = false, backPage = '/' }) {
   const navigate = useNavigate()
-  const { theme, toggleTheme, weather, textSize, cycleTextSize, zoom } = useApp()
+  const { theme, toggleTheme, weather, textSizeIndex, setTextSizeByIndex, zoom } = useApp()
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -61,7 +80,7 @@ export default function Shell({ children, showBack = false, backPage = '/' }) {
               <ArrowLeft size={14} /> {backPage === '/library' ? 'Library' : 'Home'}
             </button>
           )}
-          <TextSizeToggle textSize={textSize} cycleTextSize={cycleTextSize} />
+          <TextSizeSlider textSizeIndex={textSizeIndex} setTextSizeByIndex={setTextSizeByIndex} />
           <button onClick={toggleTheme} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)', cursor: 'pointer' }}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
