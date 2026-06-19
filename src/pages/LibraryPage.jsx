@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx'
 import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
-const PAGE_SIZE = 24
+const PAGE_SIZE = 25
 
 const SORT_OPTIONS = [
   { value: 'author_asc',  label: 'Author A → Z' },
@@ -132,7 +132,7 @@ function SeriesGroup({ seriesName, books, view, onSelect }) {
       </button>
       {open && (
         <div style={view === 'grid'
-          ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
+          ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
           : { display: 'flex', flexDirection: 'column', gap: 6 }}>
           {books.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => onSelect(book)} />)}
         </div>
@@ -418,7 +418,7 @@ export default function LibraryPage() {
                   <div style={{ height: 1, background: 'var(--border)', flexGrow: 1 }} />
                 </div>
                 <div style={view === 'grid'
-                  ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
+                  ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
                   : { display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
                 </div>
@@ -427,7 +427,7 @@ export default function LibraryPage() {
           </div>
         ) : (
           <div style={view === 'grid'
-            ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(175px,1fr))', gap: 12 }
+            ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
             : { display: 'flex', flexDirection: 'column', gap: 6 }}>
             {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
           </div>
