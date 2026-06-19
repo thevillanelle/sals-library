@@ -50,10 +50,10 @@ export function AppProvider({ children }) {
   const [weather, setWeather] = useState(null)
   const [textSize, setTextSize] = useState(() => localStorage.getItem('sl-text-size') || 'md')
 
+  const TEXT_SIZES = ['sm', 'md', 'lg', 'xl']
   const TEXT_ZOOM = { sm: 0.9, md: 1, lg: 1.15, xl: 1.3 }
-  const cycleTextSize = () => {
-    const order = ['sm', 'md', 'lg', 'xl']
-    const next = order[(order.indexOf(textSize) + 1) % order.length]
+  const setTextSizeByIndex = (i) => {
+    const next = TEXT_SIZES[i] || 'md'
     setTextSize(next)
     localStorage.setItem('sl-text-size', next)
   }
@@ -82,7 +82,7 @@ export function AppProvider({ children }) {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   return (
-    <AppContext.Provider value={{ session, loading, theme, toggleTheme, weather, textSize, cycleTextSize, zoom: TEXT_ZOOM[textSize] || 1 }}>
+    <AppContext.Provider value={{ session, loading, theme, toggleTheme, weather, textSize, textSizeIndex: TEXT_SIZES.indexOf(textSize), setTextSizeByIndex, zoom: TEXT_ZOOM[textSize] || 1 }}>
       {children}
     </AppContext.Provider>
   )
