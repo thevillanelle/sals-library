@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
@@ -87,8 +88,9 @@ async function enrichFromOpenLibrary(olKey, subjects) {
 
 export default function AddWantPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { session, weather } = useApp()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(location.state?.prefill || '')
   const [localResults, setLocalResults] = useState([])
   const [olResults, setOlResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -99,6 +101,10 @@ export default function AddWantPage() {
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
 
   const uid = session.user.id
+
+  useEffect(() => {
+    if (location.state?.prefill) search()
+  }, [])
 
   const search = async () => {
     if (!query.trim()) return
