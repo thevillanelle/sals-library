@@ -3,7 +3,38 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
-import { BookPlus, BookMarked, Shuffle, BookOpen, ChevronRight, Star } from 'lucide-react'
+import { BookPlus, BookMarked, Shuffle, BookOpen, ChevronRight, Star, Sparkles } from 'lucide-react'
+
+const DISCOVERIES = [
+  { title: 'Still Life', author: 'Louise Penny', why: 'First in a 19-book Quebec detective series — literary, warm, and impossible to put down. Similar feel to a long Baldacci run.' },
+  { title: 'The Cold Dish', author: 'Craig Johnson', why: 'Walt Longmire, Wyoming sheriff. If you love C.J. Box\'s Joe Pickett, this is the same country and the same soul. 18 books in the series.' },
+  { title: 'A Gentleman in Moscow', author: 'Amor Towles', why: 'A Russian count sentenced to house arrest in a grand hotel. Beautifully plotted, quietly funny, and deeply satisfying.' },
+  { title: 'The Pillars of the Earth', author: 'Ken Follett', why: 'Building a cathedral in medieval England. 900 pages that disappear. If you liked Jean Auel\'s epics, this is in the same company.' },
+  { title: 'All the Light We Cannot See', author: 'Anthony Doerr', why: 'WWII France and Germany told through two teenagers. Pulitzer Prize. Right in the territory of Band of Brothers and D-Day.' },
+  { title: 'Tinker Tailor Soldier Spy', author: 'John le Carré', why: 'Cold War spy fiction at its finest — methodical, cerebral, and deeply satisfying. Nothing like the movies.' },
+  { title: 'Lonesome Dove', author: 'Larry McMurtry', why: 'The great American Western. Pulitzer Prize. Two retired Texas Rangers drive a cattle herd to Montana. Unforgettable characters.' },
+  { title: 'Unbroken', author: 'Laura Hillenbrand', why: 'WWII survival story — an Olympic athlete becomes a POW. Reads like a thriller. Same nonfiction drive as Stephen Ambrose.' },
+  { title: 'The Thursday Murder Club', author: 'Richard Osman', why: 'Four retirees in a sleepy English village solve murders that baffle the police. Witty, warm, and four books deep.' },
+  { title: 'In the Woods', author: 'Tana French', why: 'Dublin detective with a buried past investigates a child\'s murder near the woods where he lost his memory as a boy. Literary crime at its best.' },
+  { title: 'Wolf Hall', author: 'Hilary Mantel', why: 'Thomas Cromwell rising through Henry VIII\'s court. Booker Prize. Historical fiction as sharp as a blade — think Jeffrey Archer but Tudor England.' },
+  { title: 'The Longest Day', author: 'Cornelius Ryan', why: 'D-Day told through hundreds of eyewitness accounts. The original narrative nonfiction on Normandy — what Ambrose built on.' },
+  { title: 'The Girl with the Dragon Tattoo', author: 'Stieg Larsson', why: 'A Swedish journalist and a fierce hacker investigate a decades-old family disappearance. Gripping trilogy.' },
+  { title: 'The Shadow of the Wind', author: 'Carlos Ruiz Zafón', why: 'Post-war Barcelona. A boy finds a mysterious novel and discovers the author has been erased from history. Mystery and literature entwined.' },
+  { title: 'The Boys in the Boat', author: 'Daniel James Brown', why: 'Nine working-class Americans row against Hitler\'s Germany at the 1936 Olympics. Nonfiction that reads like fiction.' },
+  { title: 'Educated', author: 'Tara Westover', why: 'A woman who grew up in an extremist survivalist family and taught herself out. One of the most gripping memoirs in years.' },
+  { title: 'The Last Lecture', author: 'Randy Pausch', why: 'A computer science professor with terminal cancer delivers his final lecture. If Tuesdays with Morrie moved you, this will too.' },
+  { title: 'The Name of the Rose', author: 'Umberto Eco', why: 'A monk investigates a series of murders in a 14th-century Italian monastery. Dense, brilliant, and deeply satisfying.' },
+  { title: 'Master and Commander', author: 'Patrick O\'Brian', why: 'Napoleonic-era naval warfare — 20 books following Captain Jack Aubrey. The seafaring equivalent of a long thriller series.' },
+  { title: 'Where the Crawdads Sing', author: 'Delia Owens', why: 'A girl raised alone in the North Carolina marshes becomes a murder suspect. Mystery wrapped around a coming-of-age story.' },
+  { title: 'The Power of the Dog', author: 'Don Winslow', why: 'The American drug war from both sides of the border — sprawling, novelistic crime fiction over a trilogy. If you like Baldacci\'s scope, try this.' },
+  { title: 'Shōgun', author: 'James Clavell', why: 'A 16th-century English navigator shipwrecked in Japan and swept into its civil wars. Historical epic fiction at its grandest.' },
+  { title: 'The Kite Runner', author: 'Khaled Hosseini', why: 'Afghanistan before and after the Taliban, told through a lifelong friendship and a son\'s search for redemption.' },
+  { title: 'The Covenant of Water', author: 'Abraham Verghese', why: 'Three generations of a South Indian family across 70 years. Sweeping, beautiful, and medically precise.' },
+  { title: 'Lonesome Dove', author: 'Larry McMurtry', why: 'The great American Western. Pulitzer Prize. Two retired Texas Rangers drive a cattle herd to Montana. Unforgettable characters.' },
+]
+
+// dedupe (Lonesome Dove appeared twice above — remove the dup cleanly)
+const UNIQUE_DISCOVERIES = DISCOVERIES.filter((d, i, arr) => arr.findIndex(x => x.title === d.title) === i)
 
 function Stars({ rating }) {
   return (
@@ -54,6 +85,7 @@ export default function NextReadPage() {
   const [empty, setEmpty] = useState(false)
   const [pick, setPick] = useState(null)
   const [starting, setStarting] = useState(null)
+  const [discovery, setDiscovery] = useState(null)
 
   const uid = session.user.id
 
@@ -204,6 +236,39 @@ export default function NextReadPage() {
             </div>
           </div>
         )}
+
+        {/* Discover something new */}
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
+            <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Or discover something new</span>
+            <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
+          </div>
+
+          {!discovery ? (
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 4 }}>Not sure what's next?</div>
+                <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6 }}>24 hand-picked titles based on what you love — long series, crime fiction, WWII history, sweeping epics.</p>
+              </div>
+              <button onClick={() => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])}
+                style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '11px 20px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, flexShrink: 0 }}>
+                <Sparkles size={15} /> Suggest one
+              </button>
+            </div>
+          ) : (
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>You might like</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 500, marginBottom: 2 }}>{discovery.title}</div>
+              <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{discovery.author}</div>
+              <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, fontStyle: 'italic', marginBottom: 20, borderLeft: '2px solid var(--gold)', paddingLeft: 14 }}>{discovery.why}</p>
+              <button onClick={() => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])}
+                style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 18px', color: 'var(--text2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <Shuffle size={13} /> Show another
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Full list by author */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
