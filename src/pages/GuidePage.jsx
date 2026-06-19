@@ -147,7 +147,7 @@ export default function GuidePage() {
           <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>A few things worth knowing</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { label: 'Text size', body: 'The "A Sm" button in the top right of every page cycles through four text sizes (Sm, Md, Lg, XL). The app remembers your preference.' },
+              { label: 'Text size', body: 'The gold "A" button in the top right opens a size picker — choose Sm, Md, Lg, or XL. The app remembers your choice.' },
               { label: 'Light & dark', body: 'The sun/moon button in the top right switches between paperwhite and dark mode. Also remembered across sessions.' },
               { label: 'Weather', body: 'The app quietly records the weather whenever you log a finished book, start reading, or add something to your list. Over time this builds a picture of when and what you read in different conditions.' },
               { label: 'Nothing requires a submit button', body: 'All changes on book profiles save the moment you make them. No need to hit save.' },
