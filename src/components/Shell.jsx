@@ -26,38 +26,22 @@ function DateWeather({ weather }) {
 
 const SIZE_LABELS = ['Sm', 'Md', 'Lg', 'XL']
 
-function TextSizeSlider({ textSizeIndex, setTextSizeByIndex }) {
+function TextSizeControl({ textSizeIndex, setTextSizeByIndex }) {
   return (
-    <div title="Adjust text size" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '4px 6px' }}>
-      <span style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1, userSelect: 'none' }}>{SIZE_LABELS[textSizeIndex]}</span>
-      <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Track notches */}
-        <div style={{ position: 'absolute', right: 'calc(50% + 10px)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 40, pointerEvents: 'none' }}>
-          {SIZE_LABELS.map((_, i) => (
-            <div key={i} style={{ width: i === textSizeIndex ? 6 : 4, height: 1.5, background: i === textSizeIndex ? 'var(--gold)' : 'var(--border2)', borderRadius: 1, transition: 'all 0.15s' }} />
-          ))}
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={3}
-          step={1}
-          value={textSizeIndex}
-          onChange={e => setTextSizeByIndex(Number(e.target.value))}
+    <div style={{ display: 'flex', border: '1px solid var(--border2)', borderRadius: 8, overflow: 'hidden' }}>
+      {SIZE_LABELS.map((label, i) => (
+        <button key={i} onClick={() => setTextSizeByIndex(i)}
           style={{
-            writingMode: 'vertical-lr',
-            direction: 'rtl',
-            WebkitAppearance: 'slider-vertical',
-            appearance: 'slider-vertical',
-            width: 20,
-            height: 40,
-            cursor: 'pointer',
-            accentColor: 'var(--gold)',
-            background: 'transparent',
-          }}
-        />
-      </div>
-      <span style={{ fontSize: 13, lineHeight: 1, color: 'var(--gold)', fontFamily: 'var(--font-serif)', userSelect: 'none' }}>A</span>
+            background: i === textSizeIndex ? 'var(--gold)' : 'none',
+            border: 'none',
+            borderRight: i < SIZE_LABELS.length - 1 ? '1px solid var(--border2)' : 'none',
+            color: i === textSizeIndex ? '#1a1300' : 'var(--text3)',
+            cursor: 'pointer', fontSize: 11, fontWeight: i === textSizeIndex ? 600 : 400,
+            padding: '0 9px', height: 34, transition: 'all 0.15s',
+          }}>
+          {label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -80,7 +64,7 @@ export default function Shell({ children, showBack = false, backPage = '/' }) {
               <ArrowLeft size={14} /> {backPage === '/library' ? 'Library' : 'Home'}
             </button>
           )}
-          <TextSizeSlider textSizeIndex={textSizeIndex} setTextSizeByIndex={setTextSizeByIndex} />
+          <TextSizeControl textSizeIndex={textSizeIndex} setTextSizeByIndex={setTextSizeByIndex} />
           <button onClick={toggleTheme} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)', cursor: 'pointer' }}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
