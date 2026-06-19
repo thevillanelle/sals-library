@@ -37,7 +37,7 @@ function BookCard({ book, onPick, winner }) {
         fontSize: 13, fontWeight: hov ? 600 : 400,
         transition: 'all 0.2s',
       }}>
-        I'd rather read this →
+        This one was better →
       </div>
     </div>
   )
@@ -45,21 +45,19 @@ function BookCard({ book, onPick, winner }) {
 
 export default function VersusPage() {
   const navigate = useNavigate()
-  const { session, weather } = useApp()
+  const { session } = useApp()
   const [pool, setPool] = useState([])
   const [left, setLeft] = useState(null)
   const [right, setRight] = useState(null)
   const [round, setRound] = useState(0)
   const [winner, setWinner] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [starting, setStarting] = useState(false)
-
   useEffect(() => {
     const uid = session.user.id
     supabase.from('user_books')
       .select('book_id, books(id,title,author_first,author_last,series,series_num,genre,fiction)')
       .eq('user_id', uid)
-      .eq('status', 'want-to-read')
+      .eq('status', 'read')
       .then(({ data }) => {
         const books = (data || []).map(r => r.books).filter(Boolean)
         setPool(books)
@@ -99,20 +97,13 @@ export default function VersusPage() {
     dealPair(pool)
   }
 
-  const startReading = async () => {
-    if (!winner) return
-    setStarting(true)
-    await supabase.from('user_books').update({ status: 'reading', date_started: new Date().toISOString().split('T')[0], weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }).eq('user_id', session.user.id).eq('book_id', winner.id)
-    navigate('/book/' + winner.id)
-  }
-
   if (loading) return <Shell showBack><div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Loading your shelf…</div></Shell>
 
   if (pool.length < 2) return (
     <Shell showBack>
       <div style={{ maxWidth: 500, margin: '80px auto', textAlign: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--text2)', marginBottom: 20 }}>You need at least 2 books on your want-to-read shelf to play.</p>
-        <button onClick={() => navigate('/add-want')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>Add some books →</button>
+        <p style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--text2)', marginBottom: 20 }}>You need at least 2 read books to play. Debrief a few books first.</p>
+        <button onClick={() => navigate('/debrief')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>Debrief a book →</button>
       </div>
     </Shell>
   )
@@ -123,17 +114,16 @@ export default function VersusPage() {
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--gold-pale)', border: '2px solid var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
           <Trophy size={28} color="var(--gold)" />
         </div>
-        <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text3)', marginBottom: 8 }}>Tonight's read</p>
+        <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text3)', marginBottom: 8 }}>The winner</p>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, fontWeight: 400, marginBottom: 8, lineHeight: 1.2 }}>{winner.title}</h2>
         <p style={{ color: 'var(--text2)', fontSize: 16, marginBottom: 8 }}>{[winner.author_first, winner.author_last].filter(Boolean).join(' ')}</p>
         {winner.series && <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 32 }}>{winner.series}{winner.series_num ? ` #${winner.series_num}` : ''}</p>}
         {!winner.series && <div style={{ marginBottom: 32 }} />}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={startReading} disabled={starting} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <BookOpen size={14} /> {starting ? 'Starting…' : "Let's read it"}
+          <button onClick={() => navigate('/book/' + winner.id)} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOpen size={14} /> View profile
           </button>
-          <button onClick={() => navigate('/book/' + winner.id)} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>View profile</button>
           <button onClick={reset} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text3)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
             <RotateCcw size={13} /> Play again
           </button>
@@ -147,7 +137,7 @@ export default function VersusPage() {
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 8 }}>Head to Head</h1>
-          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Which would you rather read right now?</p>
+          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Which was the better read?</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 16 }}>
             {Array.from({ length: ROUNDS }).map((_, i) => (
               <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i < round ? 'var(--gold)' : 'var(--border2)', transition: 'background 0.3s' }} />

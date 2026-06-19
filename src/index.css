@@ -9,9 +9,10 @@
   --radius: 10px; --radius-lg: 16px;
 }
 [data-theme="light"] {
-  --bg: #faf7f2; --bg2: #f3ede3; --bg3: #ece4d5;
-  --border: rgba(100,75,40,0.12); --border2: rgba(100,75,40,0.25);
-  --gold: #8c6420; --text: #2a2018; --text2: #6b5438; --text3: #a08060;
+  --bg: #f5f0e8; --bg2: #ede6d8; --bg3: #e4dac8; --bg4: #d9ceb8;
+  --border: rgba(90,65,30,0.13); --border2: rgba(90,65,30,0.27);
+  --gold: #7a5618; --gold-pale: rgba(122,86,24,0.10);
+  --text: #1e1a12; --text2: #5a4428; --text3: #9a7a52;
 }
 html, body, #root { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 h1,h2,h3,h4 { font-family: var(--font-serif); font-weight: 500; line-height: 1.25; color: var(--text); }

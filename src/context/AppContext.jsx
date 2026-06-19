@@ -46,7 +46,7 @@ async function fetchWeather() {
 export function AppProvider({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [theme, setTheme] = useState(() => localStorage.getItem('sl-theme') || 'dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem('sl-theme') || 'light')
   const [weather, setWeather] = useState(null)
   const [textSize, setTextSize] = useState(() => localStorage.getItem('sl-text-size') || 'md')
 
