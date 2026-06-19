@@ -1,4 +1,5 @@
 import { Sun, Moon, BookOpen, ArrowLeft } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
@@ -27,21 +28,39 @@ function DateWeather({ weather }) {
 const SIZE_LABELS = ['Sm', 'Md', 'Lg', 'XL']
 
 function TextSizeControl({ textSizeIndex, setTextSizeByIndex }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
   return (
-    <div style={{ display: 'flex', border: '1px solid var(--border2)', borderRadius: 8, overflow: 'hidden' }}>
-      {SIZE_LABELS.map((label, i) => (
-        <button key={i} onClick={() => setTextSizeByIndex(i)}
-          style={{
-            background: i === textSizeIndex ? 'var(--gold)' : 'none',
-            border: 'none',
-            borderRight: i < SIZE_LABELS.length - 1 ? '1px solid var(--border2)' : 'none',
-            color: i === textSizeIndex ? '#1a1300' : 'var(--text3)',
-            cursor: 'pointer', fontSize: 11, fontWeight: i === textSizeIndex ? 600 : 400,
-            padding: '0 9px', height: 34, transition: 'all 0.15s',
-          }}>
-          {label}
-        </button>
-      ))}
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ background: open ? 'var(--gold-pale)' : 'none', border: '1px solid var(--border2)', borderRadius: 8, height: 34, padding: '0 10px', cursor: 'pointer', fontSize: 14, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+        A
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, display: 'flex', border: '1px solid var(--border2)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg)', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100 }}>
+          {SIZE_LABELS.map((label, i) => (
+            <button key={i} onClick={() => { setTextSizeByIndex(i); setOpen(false) }}
+              style={{
+                background: i === textSizeIndex ? 'var(--gold)' : 'none',
+                border: 'none',
+                borderRight: i < SIZE_LABELS.length - 1 ? '1px solid var(--border2)' : 'none',
+                color: i === textSizeIndex ? '#1a1300' : 'var(--text3)',
+                cursor: 'pointer', fontSize: 11, fontWeight: i === textSizeIndex ? 600 : 400,
+                padding: '0 12px', height: 34, transition: 'all 0.15s',
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
