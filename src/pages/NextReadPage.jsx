@@ -75,6 +75,43 @@ function BookRow({ book, onNavigate, onStart, starting }) {
   )
 }
 
+function DiscoverSection() {
+  const [discovery, setDiscovery] = useState(null)
+  const suggest = () => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+        <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
+        <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Discover something new</span>
+        <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
+      </div>
+      {!discovery ? (
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 4 }}>Not sure what's next?</div>
+            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6 }}>24 hand-picked titles based on what you love — long series, crime fiction, WWII history, sweeping epics.</p>
+          </div>
+          <button onClick={suggest}
+            style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '11px 20px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, flexShrink: 0 }}>
+            <Sparkles size={15} /> Suggest one
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>You might like</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 500, marginBottom: 2 }}>{discovery.title}</div>
+          <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{discovery.author}</div>
+          <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, fontStyle: 'italic', marginBottom: 20, borderLeft: '2px solid var(--gold)', paddingLeft: 14 }}>{discovery.why}</p>
+          <button onClick={suggest}
+            style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 18px', color: 'var(--text2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            <Shuffle size={13} /> Show another
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function NextReadPage() {
   const navigate = useNavigate()
   const { session, weather } = useApp()
@@ -85,7 +122,6 @@ export default function NextReadPage() {
   const [empty, setEmpty] = useState(false)
   const [pick, setPick] = useState(null)
   const [starting, setStarting] = useState(null)
-  const [discovery, setDiscovery] = useState(null)
 
   const uid = session.user.id
 
@@ -168,16 +204,19 @@ export default function NextReadPage() {
 
   if (empty) return (
     <Shell showBack>
-      <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--gold-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-          <BookPlus size={28} color="var(--gold)" />
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>What to read next</h1>
         </div>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, marginBottom: 12 }}>Nothing on the list yet</div>
-        <p style={{ color: 'var(--text2)', marginBottom: 28 }}>Add books you want to read and they'll show up here.</p>
-        <button onClick={() => navigate('/add-want')}
-          style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 28px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500 }}>
-          Add a book
-        </button>
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '28px', marginBottom: 40, textAlign: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, marginBottom: 6 }}>No want-to-read list yet</div>
+          <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>Add books you're planning to read and they'll show up here.</p>
+          <button onClick={() => navigate('/add-want')}
+            style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 22px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
+            <BookPlus size={13} style={{ display: 'inline', marginRight: 6 }} /> Add a book
+          </button>
+        </div>
+        <DiscoverSection />
       </div>
     </Shell>
   )
@@ -237,38 +276,7 @@ export default function NextReadPage() {
           </div>
         )}
 
-        {/* Discover something new */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
-            <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Or discover something new</span>
-            <div style={{ height: 1, background: 'var(--border)', flex: 1 }} />
-          </div>
-
-          {!discovery ? (
-            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 4 }}>Not sure what's next?</div>
-                <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6 }}>24 hand-picked titles based on what you love — long series, crime fiction, WWII history, sweeping epics.</p>
-              </div>
-              <button onClick={() => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])}
-                style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '11px 20px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, flexShrink: 0 }}>
-                <Sparkles size={15} /> Suggest one
-              </button>
-            </div>
-          ) : (
-            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>You might like</div>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 500, marginBottom: 2 }}>{discovery.title}</div>
-              <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{discovery.author}</div>
-              <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, fontStyle: 'italic', marginBottom: 20, borderLeft: '2px solid var(--gold)', paddingLeft: 14 }}>{discovery.why}</p>
-              <button onClick={() => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])}
-                style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 18px', color: 'var(--text2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <Shuffle size={13} /> Show another
-              </button>
-            </div>
-          )}
-        </div>
+        <DiscoverSection />
 
         {/* Full list by author */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
