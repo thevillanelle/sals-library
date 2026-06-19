@@ -41,8 +41,8 @@ const sections = [
     color: '#9a6a8a',
     title: 'Head to Head',
     path: '/versus',
-    summary: 'Can\'t decide between two books? Let them fight it out.',
-    body: `Two books from your want-to-read shelf go head to head. You pick the one you'd rather read right now. The winner stays in the ring, a new challenger appears, and after five rounds the survivor is your pick for tonight.\n\nIt sounds like a game — and it is — but it's also a genuinely useful way to make a decision. When you see two books next to each other, your gut usually knows immediately which one you want. The bracket just makes you commit.\n\nThe final winner gets a "Let's read it" button that moves it straight to your in-progress shelf.`,
+    summary: 'Which of your read books was actually better? Let them fight it out.',
+    body: `Two books from your read library go head to head. You pick which was the better read. The winner stays in the ring, a new challenger appears, and after five rounds the survivor is crowned.\n\nIt sounds like a game — and it is — but it's a surprisingly honest way to rank books you've already read. When you see two titles next to each other, your gut usually knows immediately which one meant more. The bracket just makes you commit.\n\nThe final winner links straight to that book's profile — good for revisiting your notes or deciding whether to reread it.`,
   },
   {
     icon: Layers,
@@ -63,7 +63,7 @@ const sections = [
   {
     icon: BarChart2,
     color: '#9a7a60',
-    title: 'My Reading Life',
+    title: 'My Dashboard',
     path: '/stats',
     summary: 'Analytics about your reading habits and your library.',
     body: `Two tabs. The first is about you as a reader: how many books you've read, your debrief percentage, average rating, reading streak, genre breakdown, and the authors you've returned to most.\n\nThe second tab is about the library itself as an object: how many books it contains, how many are part of a series vs. standalone, the fiction/nonfiction split, genre coverage, and data completeness (what percentage of books have summaries, genres, Dewey decimal numbers).\n\nYour reading streak counts any day you log a debrief or fill in the blanks. It's not about how many pages you read — it's about engaging with what you've already read.`,
@@ -74,7 +74,7 @@ const sections = [
     title: 'Add a Book',
     path: '/add-want',
     summary: 'Add any book to your want-to-read shelf.',
-    body: `Search by title or author and the library checks two places at once: your existing collection (in case it's already there) and Open Library, a free public database of millions of books.\n\nIf it's in Open Library, selecting it automatically pulls in the genre, fiction/nonfiction classification, Dewey decimal number, and a summary — no typing required.\n\nIf you can't find it, there's a manual entry form. Fill in what you know; everything else can be added later from the book's profile page.\n\nThe book goes straight to your want-to-read shelf and shows up in Head to Head and What Should I Read Next.`,
+    body: `Search by title or author and the library checks two places at once: your existing collection (in case it's already there) and Open Library, a free public database of millions of books.\n\nIf it's in Open Library, selecting it automatically pulls in the genre, fiction/nonfiction classification, Dewey decimal number, and a summary — no typing required.\n\nIf you can't find it, there's a manual entry form. Fill in what you know; everything else can be added later from the book's profile page.\n\nThe book goes straight to your want-to-read shelf and shows up in What Should I Read Next.`,
   },
   {
     icon: Pencil,
@@ -140,6 +140,24 @@ export default function GuidePage() {
               </div>
             )
           })}
+        </div>
+
+        {/* Tips */}
+        <div style={{ marginTop: 48, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>A few things worth knowing</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { label: 'Text size', body: 'The "A Sm" button in the top right of every page cycles through four text sizes (Sm, Md, Lg, XL). The app remembers your preference.' },
+              { label: 'Light & dark', body: 'The sun/moon button in the top right switches between paperwhite and dark mode. Also remembered across sessions.' },
+              { label: 'Weather', body: 'The app quietly records the weather whenever you log a finished book, start reading, or add something to your list. Over time this builds a picture of when and what you read in different conditions.' },
+              { label: 'Nothing requires a submit button', body: 'All changes on book profiles save the moment you make them. No need to hit save.' },
+            ].map(tip => (
+              <div key={tip.label} style={{ display: 'flex', gap: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold)', width: 90, flexShrink: 0, paddingTop: 1 }}>{tip.label}</div>
+                <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>{tip.body}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
