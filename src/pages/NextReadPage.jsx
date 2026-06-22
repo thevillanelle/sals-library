@@ -76,6 +76,7 @@ function BookRow({ book, onNavigate, onStart, starting }) {
 }
 
 function DiscoverSection() {
+  const navigate = useNavigate()
   const [discovery, setDiscovery] = useState(null)
   const suggest = () => setDiscovery(UNIQUE_DISCOVERIES[Math.floor(Math.random() * UNIQUE_DISCOVERIES.length)])
   return (
@@ -102,10 +103,16 @@ function DiscoverSection() {
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 500, marginBottom: 2 }}>{discovery.title}</div>
           <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{discovery.author}</div>
           <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, fontStyle: 'italic', marginBottom: 20, borderLeft: '2px solid var(--gold)', paddingLeft: 14 }}>{discovery.why}</p>
-          <button onClick={suggest}
-            style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 18px', color: 'var(--text2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <Shuffle size={13} /> Show another
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={suggest}
+              style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 18px', color: 'var(--text2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <Shuffle size={13} /> Show another
+            </button>
+            <button onClick={() => navigate('/add-want', { state: { prefill: discovery.title } })}
+              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '9px 18px', color: '#1a1300', fontWeight: 500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              + Add to my list
+            </button>
+          </div>
         </div>
       )}
     </div>
