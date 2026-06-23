@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
 import * as XLSX from 'xlsx'
-import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, Plus, Check } from 'lucide-react'
+import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, Plus, Check, BookMarked } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const PAGE_SIZE = 25
@@ -418,9 +418,12 @@ export default function LibraryPage() {
             <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(view === 'list')}>
               {view === 'grid' ? <List size={14} /> : <Grid size={14} />}
             </button>
-            <button onClick={exportExcel} title="Export to Excel"
-              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', width: 34, height: 34, color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <button onClick={exportExcel} title="Export to Excel" style={iconBtnStyle(false)}>
               <Download size={14} />
+            </button>
+            <button onClick={() => navigate('/add-want')} title="Add a book"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', height: 34, padding: '0 14px', color: '#0f0e0c', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+              <Plus size={13} /> Add book
             </button>
           </div>
         </div>
