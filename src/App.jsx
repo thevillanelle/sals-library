@@ -13,6 +13,7 @@ import SeriesPage from './pages/SeriesPage'
 import AuthorPage from './pages/AuthorPage'
 import VersusPage from './pages/VersusPage'
 import GuidePage from './pages/GuidePage'
+import WantListPage from './pages/WantListPage'
 
 function AppRoutes() {
   const { session, loading, theme, toggleTheme } = useApp()
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/author"    element={<AuthorPage />} />
       <Route path="/versus"    element={<VersusPage />} />
       <Route path="/guide"     element={<GuidePage />} />
+      <Route path="/want-list" element={<WantListPage />} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   )

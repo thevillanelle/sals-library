@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
 import * as XLSX from 'xlsx'
-import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react'
+import { Search, Grid, List, Download, Star, ChevronLeft, ChevronRight, X, Layers, Plus, Check, BookMarked } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const PAGE_SIZE = 25
@@ -30,6 +30,70 @@ function Stars({ rating }) {
   )
 }
 
+function AddReadModal({ book, uid, onClose, onSaved }) {
+  const [rating, setRating] = useState(0)
+  const [hov, setHov] = useState(0)
+  const [dateRead, setDateRead] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    await supabase.from('user_books').upsert(
+      { user_id: uid, book_id: book.id, status: 'read', rating: rating || null, date_read: dateRead || null },
+      { onConflict: 'user_id,book_id' }
+    )
+    setSaving(false)
+    setDone(true)
+    setTimeout(() => { onSaved(); onClose() }, 800)
+  }
+
+  const inputStyle = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', width: '100%', boxSizing: 'border-box' }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-lg)', padding: 28, width: '100%', maxWidth: 400 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Marking as read</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 500, lineHeight: 1.3 }}>{book.title}</div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 3 }}>{[book.author_first, book.author_last].filter(Boolean).join(' ')}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4 }}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Rating</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[1, 2, 3, 4, 5].map(i => (
+                <button key={i} onClick={() => setRating(i === rating ? 0 : i)}
+                  onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(0)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                  <Star size={22} fill={(hov || rating) >= i ? 'var(--gold)' : 'none'} color={(hov || rating) >= i ? 'var(--gold)' : 'var(--border2)'} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Date read</label>
+            <input type="date" value={dateRead} onChange={e => setDateRead(e.target.value)} style={inputStyle} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 18px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
+          <button onClick={save} disabled={saving || done}
+            style={{ background: done ? '#2d6b2d' : 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 24px', color: done ? '#6dbf6d' : '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center', transition: 'all 0.2s' }}>
+            {done ? <><Check size={15} /> Moved to library!</> : saving ? 'Saving…' : 'Mark as read'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SeriesPill({ series, num }) {
   if (!series) return null
   return (
@@ -39,11 +103,20 @@ function SeriesPill({ series, num }) {
   )
 }
 
-function BookCard({ book, view, onClick, onAuthorClick }) {
+function BookCard({ book, view, onClick, onAuthorClick, onAdd }) {
   const [hov, setHov] = useState(false)
   const author = [book.author_first, book.author_last].filter(Boolean).join(' ')
   const ub = book.user_books?.[0]
   const sc = statusColors[ub?.status] || statusColors.read
+
+  const addBtn = ub?.status === 'want-to-read' ? (
+    <button
+      onClick={e => { e.stopPropagation(); onAdd?.() }}
+      title="Mark as read"
+      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text3)', flexShrink: 0, opacity: hov ? 1 : 0, transition: 'opacity 0.15s' }}>
+      <Plus size={12} />
+    </button>
+  ) : null
 
   if (view === 'list') {
     return (
@@ -67,6 +140,7 @@ function BookCard({ book, view, onClick, onAuthorClick }) {
           {ub?.status && <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 20, padding: '2px 8px', fontSize: 10, color: sc.text }}>{statusLabels[ub.status]}</span>}
           <SeriesPill series={book.series} num={book.series_num} />
           <Stars rating={ub?.rating} />
+          {addBtn}
         </div>
       </div>
     )
@@ -107,17 +181,18 @@ function BookCard({ book, view, onClick, onAuthorClick }) {
           </div>
         )}
         {/* Dewey decimal at the bottom like a library sticker */}
-        {book.dewey && (
-          <div style={{ marginTop: 'auto', paddingTop: 6, fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace', letterSpacing: '0.06em', borderTop: '1px solid var(--border)' }}>
-            {book.dewey}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto', paddingTop: book.dewey ? 6 : 0, borderTop: book.dewey ? '1px solid var(--border)' : 'none' }}>
+          {book.dewey
+            ? <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace', letterSpacing: '0.06em' }}>{book.dewey}</div>
+            : <div />}
+          {addBtn}
+        </div>
       </div>
     </div>
   )
 }
 
-function SeriesGroup({ seriesName, books, view, onSelect }) {
+function SeriesGroup({ seriesName, books, view, onSelect, onAdd }) {
   const [open, setOpen] = useState(true)
   return (
     <div style={{ marginBottom: 24 }}>
@@ -134,7 +209,7 @@ function SeriesGroup({ seriesName, books, view, onSelect }) {
         <div style={view === 'grid'
           ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
           : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {books.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => onSelect(book)} />)}
+          {books.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => onSelect(book)} onAdd={() => onAdd?.(book)} />)}
         </div>
       )}
     </div>
@@ -216,6 +291,7 @@ export default function LibraryPage() {
   const [sort, setSort] = useState(() => localStorage.getItem('sl-lib-sort') || 'author_asc')
   const [groupSeries, setGroupSeries] = useState(false)
   const [currentPage, setCurrentPage] = useState(() => Number(sessionStorage.getItem('sl-lib-page')) || 1)
+  const [addModal, setAddModal] = useState(null) // book object or null
 
   useEffect(() => { localStorage.setItem('sl-lib-view', view) }, [view])
   useEffect(() => { localStorage.setItem('sl-lib-sort', sort) }, [sort])
@@ -319,6 +395,14 @@ export default function LibraryPage() {
 
   return (
     <Shell showBack>
+      {addModal && (
+        <AddReadModal
+          book={addModal}
+          uid={uid}
+          onClose={() => setAddModal(null)}
+          onSaved={load}
+        />
+      )}
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
 
         {/* Header row */}
@@ -334,9 +418,12 @@ export default function LibraryPage() {
             <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} title={view === 'grid' ? 'List view' : 'Grid view'} style={iconBtnStyle(view === 'list')}>
               {view === 'grid' ? <List size={14} /> : <Grid size={14} />}
             </button>
-            <button onClick={exportExcel} title="Export to Excel"
-              style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', width: 34, height: 34, color: '#0f0e0c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <button onClick={exportExcel} title="Export to Excel" style={iconBtnStyle(false)}>
               <Download size={14} />
+            </button>
+            <button onClick={() => navigate('/add-want')} title="Add a book"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', height: 34, padding: '0 14px', color: '#0f0e0c', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+              <Plus size={13} /> Add book
             </button>
           </div>
         </div>
@@ -406,7 +493,7 @@ export default function LibraryPage() {
         ) : groupSeries ? (
           <div>
             {sortedSeries.map(s => (
-              <SeriesGroup key={s} seriesName={s} books={seriesMap[s]} view={view} onSelect={goToBook} />
+              <SeriesGroup key={s} seriesName={s} books={seriesMap[s]} view={view} onSelect={goToBook} onAdd={setAddModal} />
             ))}
             {standalone.length > 0 && (
               <>
@@ -420,7 +507,7 @@ export default function LibraryPage() {
                 <div style={view === 'grid'
                   ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
                   : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
+                  {standalone.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} onAdd={() => setAddModal(book)} />)}
                 </div>
               </>
             )}
@@ -429,7 +516,7 @@ export default function LibraryPage() {
           <div style={view === 'grid'
             ? { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }
             : { display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} />)}
+            {paginated.map(book => <BookCard key={book.id} book={book} view={view} onClick={() => goToBook(book)} onAuthorClick={() => navigate('/author', { state: { authorFirst: book.author_first, authorLast: book.author_last } })} onAdd={() => setAddModal(book)} />)}
           </div>
         )}
 

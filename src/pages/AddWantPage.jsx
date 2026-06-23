@@ -95,6 +95,7 @@ export default function AddWantPage() {
   const [olResults, setOlResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [status, setStatus] = useState('want-to-read')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
   const [showManual, setShowManual] = useState(false)
@@ -158,14 +159,14 @@ export default function AddWantPage() {
     }
 
     if (bookId) {
-      await supabase.from('user_books').upsert({ user_id: uid, book_id: bookId, status: 'want-to-read', weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }, { onConflict: 'user_id,book_id' })
+      await supabase.from('user_books').upsert({ user_id: uid, book_id: bookId, status, weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }, { onConflict: 'user_id,book_id' })
     }
 
     setSaving(false)
     setDone(true)
   }
 
-  const reset = () => { setDone(false); setSelected(null); setQuery(''); setLocalResults([]); setOlResults([]); setShowManual(false); setNewBook({ title: '', author_first: '', author_last: '', series: '', series_num: '' }) }
+  const reset = () => { setDone(false); setSelected(null); setStatus('want-to-read'); setQuery(''); setLocalResults([]); setOlResults([]); setShowManual(false); setNewBook({ title: '', author_first: '', author_last: '', series: '', series_num: '' }) }
 
   const inputStyle = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 14px', color: 'var(--text)', fontSize: 15, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
@@ -177,7 +178,7 @@ export default function AddWantPage() {
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#7a9e8a20', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <Check size={28} color="#7a9e8a" />
           </div>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 400, marginBottom: 8 }}>Added to the list</h2>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 400, marginBottom: 8 }}>Added!</h2>
           <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32, fontStyle: 'italic' }}>"{title}"</p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button onClick={reset} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>Add another</button>
@@ -212,8 +213,8 @@ export default function AddWantPage() {
     <Shell showBack>
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <div style={{ marginBottom: 36 }}>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>A book I want</h1>
-          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Search the library or the whole internet.</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 400, marginBottom: 4 }}>Add a book</h1>
+          <p style={{ color: 'var(--text2)', fontSize: 15 }}>Search your library or the whole internet.</p>
         </div>
 
         {!selected && (
@@ -269,9 +270,25 @@ export default function AddWantPage() {
                     <input value={newBook.series} onChange={e => setNewBook(b => ({ ...b, series: e.target.value }))} placeholder="Series (optional)" style={inputStyle} />
                     <input value={newBook.series_num} onChange={e => setNewBook(b => ({ ...b, series_num: e.target.value }))} placeholder="#" type="number" style={inputStyle} />
                   </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Add as</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[
+                        { value: 'want-to-read', label: 'Want to read' },
+                        { value: 'read',         label: 'Already read' },
+                        { value: 'reading',      label: 'Currently reading' },
+                        { value: 'dnf',          label: 'DNF' },
+                      ].map(opt => (
+                        <button key={opt.value} onClick={() => setStatus(opt.value)}
+                          style={{ padding: '7px 16px', borderRadius: 20, border: `1px solid ${status === opt.value ? 'var(--gold)' : 'var(--border)'}`, background: status === opt.value ? 'var(--gold-pale)' : 'var(--bg3)', color: status === opt.value ? 'var(--gold)' : 'var(--text2)', cursor: 'pointer', fontSize: 13, fontWeight: status === opt.value ? 500 : 400, transition: 'all 0.15s' }}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <button onClick={save} disabled={saving || !newBook.title.trim()}
                     style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: !newBook.title.trim() ? 0.5 : 1 }}>
-                    <Plus size={16} /> {saving ? 'Adding…' : 'Add to want list'}
+                    <Plus size={16} /> {saving ? 'Adding…' : 'Add to library'}
                   </button>
                 </div>
               </div>
@@ -292,12 +309,27 @@ export default function AddWantPage() {
                 {selected.year_published && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{selected.year_published}{selected.page_count ? ` · ${selected.page_count} pages` : ''}</div>}
               </div>
             </div>
-            <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24 }}>Add this to your want-to-read list?</p>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Add as</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { value: 'want-to-read', label: 'Want to read' },
+                  { value: 'read',         label: 'Already read' },
+                  { value: 'reading',      label: 'Currently reading' },
+                  { value: 'dnf',          label: 'DNF' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setStatus(opt.value)}
+                    style={{ padding: '7px 16px', borderRadius: 20, border: `1px solid ${status === opt.value ? 'var(--gold)' : 'var(--border)'}`, background: status === opt.value ? 'var(--gold-pale)' : 'var(--bg3)', color: status === opt.value ? 'var(--gold)' : 'var(--text2)', cursor: 'pointer', fontSize: 13, fontWeight: status === opt.value ? 500 : 400, transition: 'all 0.15s' }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
               <button onClick={save} disabled={saving}
-                style={{ background: '#7a9e8a', border: 'none', borderRadius: 'var(--radius)', padding: '10px 24px', color: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Plus size={15} /> {saving ? 'Adding…' : 'Add to list'}
+                style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 24px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' }}>
+                <Plus size={15} /> {saving ? 'Adding…' : 'Add to library'}
               </button>
             </div>
           </div>
