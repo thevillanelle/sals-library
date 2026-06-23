@@ -98,6 +98,7 @@ export default function AddWantPage() {
   const [status, setStatus] = useState('want-to-read')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const [showManual, setShowManual] = useState(false)
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
 
@@ -133,6 +134,7 @@ export default function AddWantPage() {
 
   const save = async () => {
     setSaving(true)
+    setSaveError(null)
     let bookId = selected?.id
 
     if (!bookId) {
@@ -154,12 +156,23 @@ export default function AddWantPage() {
         payload = { title: newBook.title.trim(), author_first: newBook.author_first.trim() || null, author_last: newBook.author_last.trim() || null, series: newBook.series.trim() || null, series_num: newBook.series_num ? Number(newBook.series_num) : null }
       }
 
-      const { data: inserted } = await supabase.from('books').insert(payload).select('id').single()
-      bookId = inserted?.id
+      const { data: inserted, error: insertError } = await supabase.from('books').insert(payload).select('id').single()
+      if (insertError || !inserted?.id) {
+        setSaveError('Could not save the book. Please try again.')
+        setSaving(false)
+        return
+      }
+      bookId = inserted.id
     }
 
-    if (bookId) {
-      await supabase.from('user_books').upsert({ user_id: uid, book_id: bookId, status, weather_condition: weather?.condition || null, weather_temp: weather?.temp || null }, { onConflict: 'user_id,book_id' })
+    const { error: upsertError } = await supabase.from('user_books').upsert(
+      { user_id: uid, book_id: bookId, status, weather_condition: weather?.condition || null, weather_temp: weather?.temp || null },
+      { onConflict: 'user_id,book_id' }
+    )
+    if (upsertError) {
+      setSaveError('Could not update your library. Please try again.')
+      setSaving(false)
+      return
     }
 
     setSaving(false)
@@ -286,6 +299,9 @@ export default function AddWantPage() {
                       ))}
                     </div>
                   </div>
+                  {saveError && (
+                    <p style={{ color: '#bf6d6d', fontSize: 13, margin: 0 }}>{saveError}</p>
+                  )}
                   <button onClick={save} disabled={saving || !newBook.title.trim()}
                     style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px', color: '#0f0e0c', cursor: 'pointer', fontWeight: 500, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: !newBook.title.trim() ? 0.5 : 1 }}>
                     <Plus size={16} /> {saving ? 'Adding…' : 'Add to library'}
@@ -325,6 +341,9 @@ export default function AddWantPage() {
                 ))}
               </div>
             </div>
+            {saveError && (
+              <p style={{ color: '#bf6d6d', fontSize: 13, marginBottom: 12 }}>{saveError}</p>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--text2)', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
               <button onClick={save} disabled={saving}
