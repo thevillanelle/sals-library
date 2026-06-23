@@ -11,7 +11,7 @@ const mainTiles = [
   { key:'debrief',  icon:BookCheck,  label:'A book I finished',         sub:'Sit down for a debrief',        accent:'#c9963c', path:'/debrief'   },
   { key:'stats',    icon:BarChart2,  label:'My Dashboard',              sub:'Stats & insights',              accent:'#9a7a60', path:'/stats'     },
   { key:'series',   icon:Layers,     label:'Series Tracker',            sub:'See every series, spot the gaps',accent:'#6a9070', path:'/series'   },
-  { key:'want',     icon:BookMarked, label:'Add a book',                sub:'Add to your want-to-read list', accent:'#7a9e8a', path:'/add-want'  },
+  { key:'want',     icon:BookMarked, label:'Want to Read',              sub:'Your list — mark books as read', accent:'#7a9e8a', path:'/want-list' },
 ]
 
 const gameTiles = [
