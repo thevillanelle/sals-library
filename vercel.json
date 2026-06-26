@@ -1,6 +1,6 @@
 {
   "routes": [
-    { "src": "/health.json", "dest": "/health.json" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
