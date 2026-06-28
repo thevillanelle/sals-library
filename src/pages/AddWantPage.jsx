@@ -98,6 +98,7 @@ export default function AddWantPage() {
   const [status, setStatus] = useState('want-to-read')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
+  const [savedBookId, setSavedBookId] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [showManual, setShowManual] = useState(false)
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
@@ -176,6 +177,7 @@ export default function AddWantPage() {
     }
 
     setSaving(false)
+    setSavedBookId(bookId)
     setDone(true)
   }
 
@@ -193,8 +195,11 @@ export default function AddWantPage() {
           </div>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 400, marginBottom: 8 }}>Added!</h2>
           <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32, fontStyle: 'italic' }}>"{title}"</p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={reset} style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>Add another</button>
+            {savedBookId && (
+              <button onClick={() => navigate('/book/' + savedBookId)} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '12px 24px', color: 'var(--text)', cursor: 'pointer', fontSize: 14 }}>View book card</button>
+            )}
             <button onClick={() => navigate('/')} style={{ background: 'var(--gold)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', color: '#0f0e0c', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Back home</button>
           </div>
         </div>
