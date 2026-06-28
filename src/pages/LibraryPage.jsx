@@ -305,7 +305,7 @@ export default function LibraryPage() {
     setLoading(true)
     let q = supabase
       .from('books')
-      .select('*, user_books!left(status,rating,date_read,one_thing,best_moment,dragged,give_to,compare,recommend)', { count: 'exact' })
+      .select('*, user_books!inner(status,rating,date_read,one_thing,best_moment,dragged,give_to,compare,recommend)', { count: 'exact' })
       .eq('user_books.user_id', uid)
 
     if (search) q = q.or(`title.ilike.%${search}%,author_last.ilike.%${search}%,author_first.ilike.%${search}%,series.ilike.%${search}%`)
