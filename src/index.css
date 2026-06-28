@@ -20,3 +20,4 @@ button { cursor: pointer; font-family: var(--font-sans); }
 input, select, textarea { font-family: var(--font-sans); font-size: 15px; color: var(--text); background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; outline: none; transition: border-color 0.15s; width: 100%; }
 input:focus, select:focus, textarea:focus { border-color: var(--gold); }
 input::placeholder { color: var(--text3); }
+@keyframes spin { to { transform: rotate(360deg); } }

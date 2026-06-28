@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
-import { Star, BookOpen, ArrowLeft, Trash2 } from 'lucide-react'
+import { Star, BookOpen, ArrowLeft, Trash2, RefreshCw } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const statusColors = {
@@ -121,6 +121,19 @@ function deriveFiction(subjects) {
   return null
 }
 
+async function fetchSummaryFromGoogleBooks(title, authorLast) {
+  try {
+    const q = encodeURIComponent(`intitle:"${title}"${authorLast ? `+inauthor:${authorLast}` : ''}`)
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const item = (data.items || []).find(i => (i.volumeInfo?.description?.length || 0) > 60)
+    const desc = item?.volumeInfo?.description
+    if (!desc) return null
+    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
+  } catch { return null }
+}
+
 async function fetchFromOpenLibrary(title, authorLast) {
   try {
     const q = encodeURIComponent(`${title} ${authorLast || ''}`)
@@ -142,18 +155,12 @@ async function fetchFromOpenLibrary(title, authorLast) {
       dewey: null,
     }
 
-    const [workRes, edRes] = await Promise.all([
-      fetch(`https://openlibrary.org${doc.key}.json`),
+    const [summaryResult, edRes] = await Promise.all([
+      fetchSummaryFromGoogleBooks(title, authorLast),
       fetch(`https://openlibrary.org/works/${doc.key.replace('/works/', '')}/editions.json?limit=10`),
     ])
 
-    if (workRes.ok) {
-      const w = await workRes.json()
-      let desc = w.description
-      if (typeof desc === 'object') desc = desc.value
-      if (desc && desc.length >= 60)
-        result.summary = desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
-    }
+    result.summary = summaryResult
 
     if (edRes.ok) {
       const edData = await edRes.json()
@@ -174,6 +181,7 @@ export default function BookPage() {
   const [ub, setUb] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchingDesc, setFetchingDesc] = useState(false)
+  const [refreshingSummary, setRefreshingSummary] = useState(false)
   const [removeConfirm, setRemoveConfirm] = useState(false)
   const uid = session.user.id
 
@@ -209,6 +217,16 @@ export default function BookPage() {
     }
     load()
   }, [bookId, uid])
+
+  const refreshSummary = async () => {
+    setRefreshingSummary(true)
+    const desc = await fetchSummaryFromGoogleBooks(book.title, book.author_last)
+    if (desc) {
+      await supabase.from('books').update({ summary: desc }).eq('id', bookId)
+      setBook(prev => ({ ...prev, summary: desc }))
+    }
+    setRefreshingSummary(false)
+  }
 
   const handleRemove = async () => {
     await supabase.from('user_books').delete().eq('user_id', uid).eq('book_id', bookId)
@@ -269,7 +287,14 @@ export default function BookPage() {
 
         {/* Summary */}
         <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, marginBottom: 32 }}>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 10 }}>About this book</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>About this book</div>
+            <button onClick={refreshSummary} disabled={refreshingSummary}
+              title="Refresh description"
+              style={{ background: 'none', border: 'none', cursor: refreshingSummary ? 'default' : 'pointer', color: 'var(--text3)', padding: 2, display: 'flex', alignItems: 'center', opacity: refreshingSummary ? 0.4 : 1 }}>
+              <RefreshCw size={11} style={{ animation: refreshingSummary ? 'spin 1s linear infinite' : 'none' }} />
+            </button>
+          </div>
           {fetchingDesc
             ? <p style={{ color: 'var(--text3)', fontSize: 14, fontStyle: 'italic' }}>Fetching description…</p>
             : book.summary
