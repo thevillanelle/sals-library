@@ -57,31 +57,37 @@ async function searchOpenLibrary(query) {
   } catch { return [] }
 }
 
-async function enrichFromOpenLibrary(olKey, subjects) {
+async function fetchSummaryFromGoogleBooks(title, authorLast) {
+  try {
+    const q = encodeURIComponent(`intitle:"${title}"${authorLast ? `+inauthor:${authorLast}` : ''}`)
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const item = (data.items || []).find(i => (i.volumeInfo?.description?.length || 0) > 60)
+    const desc = item?.volumeInfo?.description
+    if (!desc) return null
+    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
+  } catch { return null }
+}
+
+async function enrichFromOpenLibrary(olKey, subjects, title, authorLast) {
   const genre = deriveGenre(subjects)
   const fiction = deriveFiction(subjects)
 
   let dewey = null
-  let summary = null
 
   try {
     const workId = olKey.replace('/works/', '')
-    const [edRes, workRes] = await Promise.all([
-      fetch(`https://openlibrary.org/works/${workId}/editions.json?limit=10`),
-      fetch(`https://openlibrary.org${olKey}.json`),
-    ])
+    const edRes = await fetch(`https://openlibrary.org/works/${workId}/editions.json?limit=10`)
     if (edRes.ok) {
       const edData = await edRes.json()
       const withDewey = (edData.entries || []).find(e => e.dewey_decimal_class?.length)
       const raw = withDewey?.dewey_decimal_class?.find(d => /^\d/.test(d)) || withDewey?.dewey_decimal_class?.[0]
       if (raw) dewey = raw.trim()
     }
-    if (workRes.ok) {
-      const workData = await workRes.json()
-      const desc = workData.description
-      if (desc) summary = typeof desc === 'string' ? desc : desc.value || null
-    }
   } catch { /* best effort */ }
+
+  const summary = await fetchSummaryFromGoogleBooks(title, authorLast)
 
   return { genre, fiction, dewey, summary }
 }
@@ -141,7 +147,7 @@ export default function AddWantPage() {
     if (!bookId) {
       let payload
       if (selected?._olKey) {
-        const enriched = await enrichFromOpenLibrary(selected._olKey, selected._subjects || [])
+        const enriched = await enrichFromOpenLibrary(selected._olKey, selected._subjects || [], selected.title, selected.author_last)
         payload = {
           title: selected.title,
           author_first: selected.author_first || null,
