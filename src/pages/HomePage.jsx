@@ -58,7 +58,7 @@ export default function HomePage() {
       supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid).not('one_thing','is',null),
       supabase.from('user_books').select('*',{count:'exact',head:true}).eq('user_id',uid).not('rating','is',null),
       supabase.from('reading_sessions').select('streak_count').eq('user_id',uid).order('session_date',{ascending:false}).limit(1),
-      supabase.from('user_books').select('book_id, date_read, rating, books(id,title,author_first,author_last)').eq('user_id',uid).like('date_read', `%-${mm}-${dd}`).not('date_read','is',null).lt('date_read', `${today.getFullYear()}-01-01`),
+      supabase.from('user_books').select('book_id, date_read, rating, books!user_books_book_id_fkey(id,title,author_first,author_last)').eq('user_id',uid).like('date_read', `%-${mm}-${dd}`).not('date_read','is',null).lt('date_read', `${today.getFullYear()}-01-01`),
     ]).then(([{count:total},{count:read},{count:rated},{data:sess},{data:otd}]) => {
       setStats({ total:total||0, read:read||0, rated:rated||0, streak:sess?.[0]?.streak_count||'—' })
       setOnThisDay(otd || [])
