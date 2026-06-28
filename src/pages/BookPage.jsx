@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
-import { Star, BookOpen, ArrowLeft } from 'lucide-react'
+import { Star, BookOpen, ArrowLeft, Trash2 } from 'lucide-react'
 
 const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
 const statusColors = {
@@ -89,23 +89,80 @@ function Toggle({ value, onSave, labelTrue, labelFalse }) {
   )
 }
 
-async function fetchSummaryFromOpenLibrary(title, authorLast) {
+const GENRE_KEYWORDS = [
+  ['Science Fiction',    ['science fiction', 'sci-fi', 'space opera', 'cyberpunk', 'dystopian']],
+  ['Fantasy',            ['fantasy', 'magic', 'dragons', 'wizards', 'sword and sorcery']],
+  ['Horror',             ['horror', 'supernatural fiction', 'ghost stories']],
+  ['Mystery',            ['mystery', 'detective', 'whodunit', 'noir']],
+  ['Thriller',           ['thriller', 'suspense', 'espionage', 'spy']],
+  ['Crime',              ['crime', 'murder', 'heist', 'true crime']],
+  ['Historical Fiction', ['historical fiction', 'historical novel']],
+  ['Literary Fiction',   ['literary fiction', 'psychological fiction']],
+  ['Biography',          ['biography', 'autobiography', 'memoir', 'personal memoirs']],
+  ['History',            ['history', 'world war', 'civil war', 'military history']],
+  ['Science',            ['science', 'natural history', 'evolution', 'physics', 'biology']],
+  ['Adventure',          ['adventure', 'survival', 'exploration']],
+  ['Romance',            ['romance', 'love stories']],
+  ['Classic',            ['classics', '19th century fiction', 'victorian']],
+]
+
+function deriveGenre(subjects) {
+  const lower = subjects.map(s => s.toLowerCase())
+  for (const [genre, keywords] of GENRE_KEYWORDS) {
+    if (keywords.some(k => lower.some(s => s.includes(k)))) return genre
+  }
+  return null
+}
+
+function deriveFiction(subjects) {
+  const lower = subjects.join(' ').toLowerCase()
+  if (/\bnonfiction\b|non-fiction|biography|autobiography|memoir|history|true crime|science|essays/.test(lower)) return false
+  if (/\bfiction\b|novel|stories/.test(lower)) return true
+  return null
+}
+
+async function fetchFromOpenLibrary(title, authorLast) {
   try {
-    const q = encodeURIComponent(`${title} ${authorLast}`)
-    const res = await fetch(`https://openlibrary.org/search.json?q=${q}&limit=3&fields=key,author_name`)
+    const q = encodeURIComponent(`${title} ${authorLast || ''}`)
+    const res = await fetch(`https://openlibrary.org/search.json?q=${q}&limit=3&fields=key,author_name,first_publish_year,number_of_pages_median,subject`)
     if (!res.ok) return null
     const data = await res.json()
     const doc = (data.docs || []).find(d =>
       d.author_name?.some(a => a.toLowerCase().includes((authorLast || '').toLowerCase()))
     ) || data.docs?.[0]
     if (!doc?.key) return null
-    const work = await fetch(`https://openlibrary.org${doc.key}.json`)
-    if (!work.ok) return null
-    const w = await work.json()
-    let desc = w.description
-    if (typeof desc === 'object') desc = desc.value
-    if (!desc || desc.length < 60) return null
-    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
+
+    const subjects = doc.subject || []
+    const result = {
+      genre: deriveGenre(subjects),
+      fiction: deriveFiction(subjects),
+      year_published: doc.first_publish_year || null,
+      page_count: doc.number_of_pages_median || null,
+      summary: null,
+      dewey: null,
+    }
+
+    const [workRes, edRes] = await Promise.all([
+      fetch(`https://openlibrary.org${doc.key}.json`),
+      fetch(`https://openlibrary.org/works/${doc.key.replace('/works/', '')}/editions.json?limit=10`),
+    ])
+
+    if (workRes.ok) {
+      const w = await workRes.json()
+      let desc = w.description
+      if (typeof desc === 'object') desc = desc.value
+      if (desc && desc.length >= 60)
+        result.summary = desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
+    }
+
+    if (edRes.ok) {
+      const edData = await edRes.json()
+      const withDewey = (edData.entries || []).find(e => e.dewey_decimal_class?.length)
+      const raw = withDewey?.dewey_decimal_class?.find(d => /^\d/.test(d)) || withDewey?.dewey_decimal_class?.[0]
+      if (raw) result.dewey = raw.trim()
+    }
+
+    return result
   } catch { return null }
 }
 
@@ -117,6 +174,7 @@ export default function BookPage() {
   const [ub, setUb] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchingDesc, setFetchingDesc] = useState(false)
+  const [removeConfirm, setRemoveConfirm] = useState(false)
   const uid = session.user.id
 
   useEffect(() => {
@@ -128,19 +186,34 @@ export default function BookPage() {
       setUb(u || {})
       setLoading(false)
 
-      // Auto-fetch summary if missing
-      if (b && !b.summary) {
+      // Auto-populate missing fields from Open Library
+      const needsEnrich = b && (!b.summary || !b.genre || b.fiction == null || !b.year_published || !b.page_count)
+      if (needsEnrich) {
         setFetchingDesc(true)
-        const desc = await fetchSummaryFromOpenLibrary(b.title, b.author_last)
-        if (desc) {
-          await supabase.from('books').update({ summary: desc }).eq('id', b.id)
-          setBook(prev => ({ ...prev, summary: desc }))
+        const ol = await fetchFromOpenLibrary(b.title, b.author_last)
+        if (ol) {
+          const updates = {}
+          if (!b.summary && ol.summary)           updates.summary       = ol.summary
+          if (!b.genre && ol.genre)               updates.genre         = ol.genre
+          if (b.fiction == null && ol.fiction != null) updates.fiction  = ol.fiction
+          if (!b.year_published && ol.year_published) updates.year_published = ol.year_published
+          if (!b.page_count && ol.page_count)     updates.page_count    = ol.page_count
+          if (!b.dewey && ol.dewey)               updates.dewey         = ol.dewey
+          if (Object.keys(updates).length > 0) {
+            await supabase.from('books').update(updates).eq('id', b.id)
+            setBook(prev => ({ ...prev, ...updates }))
+          }
         }
         setFetchingDesc(false)
       }
     }
     load()
   }, [bookId, uid])
+
+  const handleRemove = async () => {
+    await supabase.from('user_books').delete().eq('user_id', uid).eq('book_id', bookId)
+    navigate('/library')
+  }
 
   const saveBook = async (field, value) => {
     setBook(prev => ({ ...prev, [field]: value }))
@@ -311,6 +384,28 @@ export default function BookPage() {
           <Field label="Memorable passage">
             <TextInput value={ub?.passage} onSave={v => saveUb('passage', v || null)} placeholder="A sentence or paragraph that stays with you…" multiline />
           </Field>
+        </div>
+
+        {/* Remove from library */}
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+          {removeConfirm ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, color: 'var(--text3)' }}>Remove this book from your library?</span>
+              <button onClick={() => setRemoveConfirm(false)}
+                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 14px', color: 'var(--text2)', cursor: 'pointer', fontSize: 13 }}>
+                Cancel
+              </button>
+              <button onClick={handleRemove}
+                style={{ background: '#2a1515', border: '1px solid #5a2020', borderRadius: 'var(--radius)', padding: '6px 14px', color: '#bf6d6d', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                Remove
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setRemoveConfirm(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, padding: 0 }}>
+              <Trash2 size={13} /> Remove from library
+            </button>
+          )}
         </div>
 
       </div>
