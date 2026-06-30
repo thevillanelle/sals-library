@@ -64,33 +64,54 @@ export default function AddWantPage() {
   const [showManual, setShowManual] = useState(false)
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
 
-  useEffect(() => {
-    if (location.state?.prefill) search()
-  }, [])
-
-  const search = async () => {
-    if (!query.trim()) return
+  const search = async (q = query) => {
+    const trimmed = q.trim()
+    if (!trimmed) return
     setSearching(true)
     setLocalResults([])
     setOlResults([])
     setShowManual(false)
 
-    // Show local results immediately — no waiting on OL
-    const { data: local } = await supabase.from('books')
-      .select('id,title,author_first,author_last,series,series_num')
-      .or(`title.ilike.%${query}%,author_last.ilike.%${query}%`)
-      .limit(8)
-    setLocalResults(local || [])
+    const parts = trimmed.split(/\s+/)
+    const [mainRes, crossRes] = await Promise.all([
+      supabase.from('books')
+        .select('id,title,author_first,author_last,series,series_num')
+        .or(`title.ilike.%${trimmed}%,author_last.ilike.%${trimmed}%,author_first.ilike.%${trimmed}%`)
+        .limit(8),
+      parts.length > 1
+        ? supabase.from('books')
+            .select('id,title,author_first,author_last,series,series_num')
+            .ilike('author_first', `%${parts[0]}%`)
+            .ilike('author_last', `%${parts.slice(1).join(' ')}%`)
+            .limit(8)
+        : Promise.resolve({ data: [] }),
+    ])
+    const seen = new Set()
+    const local = []
+    for (const book of [...(mainRes.data || []), ...(crossRes.data || [])]) {
+      if (!seen.has(book.id)) { seen.add(book.id); local.push(book) }
+    }
+    setLocalResults(local)
 
     // OL loads in the background; spinner stays until it resolves
-    searchOpenLibrary(query).then(ol => {
-      const localTitles = new Set((local || []).map(b => b.title.toLowerCase()))
+    searchOpenLibrary(trimmed).then(ol => {
+      const localTitles = new Set(local.map(b => b.title.toLowerCase()))
       setOlResults(ol.filter(b => !localTitles.has(b.title.toLowerCase())))
       setSearching(false)
     })
   }
 
-  const handleKey = e => { if (e.key === 'Enter') search() }
+  useEffect(() => {
+    if (location.state?.prefill) search(location.state.prefill)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (query.trim().length < 2) { setLocalResults([]); setOlResults([]); return }
+    const t = setTimeout(() => search(query), 400)
+    return () => clearTimeout(t)
+  }, [query]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleKey = e => { if (e.key === 'Enter') search(query) }
 
   const save = async () => {
     setSaving(true)

@@ -237,21 +237,46 @@ export default function LibraryPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    let q = supabase
-      .from('books')
-      .select('*, user_books!inner(status,rating,date_read,one_thing,best_moment,dragged,give_to,compare,recommend)', { count: 'exact' })
-      .eq('user_books.user_id', uid)
 
+    const buildQ = () => {
+      let q = supabase
+        .from('books')
+        .select('*, user_books!inner(status,rating,date_read,one_thing,best_moment,dragged,give_to,compare,recommend)', { count: 'exact' })
+        .eq('user_books.user_id', uid)
+      if (filterStatus) q = q.eq('user_books.status', filterStatus)
+      if (filterRating) q = q.gte('user_books.rating', Number(filterRating))
+      if (filterAuthor) q = q.eq('author_last', filterAuthor)
+      if (filterGenre) q = q.eq('genre', filterGenre)
+      if (filterFiction === 'fiction') q = q.eq('fiction', true)
+      if (filterFiction === 'nonfiction') q = q.eq('fiction', false)
+      return q
+    }
+
+    const parts = debouncedSearch.trim().split(/\s+/)
+    const needsCross = debouncedSearch.includes(' ') && parts.length > 1
+
+    let q = buildQ()
     if (debouncedSearch) q = q.or(`title.ilike.%${debouncedSearch}%,author_last.ilike.%${debouncedSearch}%,author_first.ilike.%${debouncedSearch}%,series.ilike.%${debouncedSearch}%`)
-    if (filterStatus) q = q.eq('user_books.status', filterStatus)
-    if (filterRating) q = q.gte('user_books.rating', Number(filterRating))
-    if (filterAuthor) q = q.eq('author_last', filterAuthor)
-    if (filterGenre) q = q.eq('genre', filterGenre)
-    if (filterFiction === 'fiction') q = q.eq('fiction', true)
-    if (filterFiction === 'nonfiction') q = q.eq('fiction', false)
 
-    const { data, count, error } = await q.order('author_last').limit(2000)
-    if (!error) { setAllBooks(data || []); setTotal(count || 0) }
+    const [primary, cross] = await Promise.all([
+      q.order('author_last').limit(2000),
+      needsCross
+        ? buildQ()
+            .ilike('author_first', `%${parts[0]}%`)
+            .ilike('author_last', `%${parts.slice(1).join(' ')}%`)
+            .order('author_last').limit(2000)
+        : Promise.resolve({ data: null, count: 0, error: null }),
+    ])
+
+    if (!primary.error) {
+      let data = primary.data || []
+      if (cross.data?.length) {
+        const seen = new Set(data.map(b => b.id))
+        data = [...data, ...cross.data.filter(b => !seen.has(b.id))]
+      }
+      setAllBooks(data)
+      setTotal(needsCross ? data.length : (primary.count || 0))
+    }
     setLoading(false)
   }, [uid, debouncedSearch, filterStatus, filterRating, filterAuthor, filterGenre, filterFiction])
 
