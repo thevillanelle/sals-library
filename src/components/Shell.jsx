@@ -40,7 +40,7 @@ function TextSizeControl({ textSizeIndex, setTextSizeByIndex }) {
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(o => !o)}
+      <button onClick={() => setOpen(o => !o)} aria-label="Adjust text size"
         style={{ background: open ? 'var(--gold-pale)' : 'none', border: '1px solid var(--border2)', borderRadius: 8, height: 34, padding: '0 10px', cursor: 'pointer', fontSize: 14, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
         A
       </button>
@@ -84,7 +84,7 @@ export default function Shell({ children, showBack = false, backPage = '/' }) {
             </button>
           )}
           <TextSizeControl textSizeIndex={textSizeIndex} setTextSizeByIndex={setTextSizeByIndex} />
-          <button onClick={toggleTheme} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)', cursor: 'pointer' }}>
+          <button onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} style={{ background: 'none', border: '1px solid var(--border2)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text2)', cursor: 'pointer' }}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>

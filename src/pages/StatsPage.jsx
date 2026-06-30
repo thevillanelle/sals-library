@@ -107,7 +107,8 @@ export default function StatsPage() {
           .select('status, rating, date_read, one_thing, book_id, books(author_first, author_last, series, genre, fiction)')
           .eq('user_id', uid),
         supabase.from('books')
-          .select('id, genre, fiction, series, author_first, author_last, summary, dewey, year_published'),
+          .select('id, genre, fiction, series, author_first, author_last, summary, dewey, year_published, user_books!inner(user_id)')
+          .eq('user_books.user_id', uid),
         supabase.from('reading_sessions')
           .select('streak_count').eq('user_id', uid).order('session_date', { ascending: false }).limit(1),
       ])

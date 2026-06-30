@@ -5,39 +5,7 @@ import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
 import { Search, Plus, Check, BookMarked, Globe } from 'lucide-react'
-
-const GENRE_KEYWORDS = [
-  ['Science Fiction',    ['science fiction', 'sci-fi', 'space opera', 'cyberpunk', 'dystopian']],
-  ['Fantasy',            ['fantasy', 'magic', 'dragons', 'wizards', 'sword and sorcery']],
-  ['Horror',             ['horror', 'supernatural fiction', 'ghost stories']],
-  ['Mystery',            ['mystery', 'detective', 'whodunit', 'noir']],
-  ['Thriller',           ['thriller', 'suspense', 'espionage', 'spy']],
-  ['Crime',              ['crime', 'murder', 'heist', 'true crime']],
-  ['Historical Fiction', ['historical fiction', 'historical novel']],
-  ['Literary Fiction',   ['literary fiction', 'psychological fiction']],
-  ['Biography',          ['biography', 'autobiography', 'memoir', 'personal memoirs']],
-  ['History',            ['history', 'world war', 'civil war', 'military history']],
-  ['Science',            ['science', 'natural history', 'evolution', 'physics', 'biology']],
-  ['Adventure',          ['adventure', 'survival', 'exploration']],
-  ['Western',            ['western stories', 'frontier']],
-  ['Romance',            ['romance', 'love stories']],
-  ['Classic',            ['classics', '19th century fiction', 'victorian']],
-]
-
-function deriveGenre(subjects) {
-  const lower = subjects.map(s => s.toLowerCase())
-  for (const [genre, keywords] of GENRE_KEYWORDS) {
-    if (keywords.some(k => lower.some(s => s.includes(k)))) return genre
-  }
-  return null
-}
-
-function deriveFiction(subjects) {
-  const lower = subjects.join(' ').toLowerCase()
-  if (/\bnonfiction\b|non-fiction|biography|autobiography|memoir|history|true crime|science|essays/.test(lower)) return false
-  if (/\bfiction\b|novel|stories/.test(lower)) return true
-  return null
-}
+import { deriveGenre, deriveFiction, fetchSummaryFromGoogleBooks } from '../lib/bookUtils'
 
 async function searchOpenLibrary(query) {
   try {
@@ -55,19 +23,6 @@ async function searchOpenLibrary(query) {
       page_count: d.number_of_pages_median || null,
     }))
   } catch { return [] }
-}
-
-async function fetchSummaryFromGoogleBooks(title, authorLast) {
-  try {
-    const q = encodeURIComponent(`intitle:"${title}"${authorLast ? `+inauthor:${authorLast}` : ''}`)
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`)
-    if (!res.ok) return null
-    const data = await res.json()
-    const item = (data.items || []).find(i => (i.volumeInfo?.description?.length || 0) > 60)
-    const desc = item?.volumeInfo?.description
-    if (!desc) return null
-    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
-  } catch { return null }
 }
 
 async function enrichFromOpenLibrary(olKey, subjects, title, authorLast) {
