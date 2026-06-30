@@ -44,11 +44,26 @@ export default function DebriefPage() {
 
   async function runBookSearch(val) {
     if (val.length < 2) { setBookResults([]); return }
-    const { data } = await supabase.from('books')
-      .select('id,title,author_last,author_first,series,series_num')
-      .or(`title.ilike.%${val}%,author_last.ilike.%${val}%,author_first.ilike.%${val}%`)
-      .limit(8)
-    setBookResults(data || [])
+    const parts = val.trim().split(/\s+/)
+    const [main, cross] = await Promise.all([
+      supabase.from('books')
+        .select('id,title,author_last,author_first,series,series_num')
+        .or(`title.ilike.%${val}%,author_last.ilike.%${val}%,author_first.ilike.%${val}%`)
+        .limit(8),
+      parts.length > 1
+        ? supabase.from('books')
+            .select('id,title,author_last,author_first,series,series_num')
+            .ilike('author_first', `%${parts[0]}%`)
+            .ilike('author_last', `%${parts.slice(1).join(' ')}%`)
+            .limit(8)
+        : Promise.resolve({ data: [] }),
+    ])
+    const seen = new Set()
+    const merged = []
+    for (const book of [...(main.data || []), ...(cross.data || [])]) {
+      if (!seen.has(book.id)) { seen.add(book.id); merged.push(book) }
+    }
+    setBookResults(merged.slice(0, 8))
   }
 
   function searchBooks(val) {
