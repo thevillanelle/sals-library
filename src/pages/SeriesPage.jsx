@@ -86,15 +86,14 @@ function SeriesCard({ seriesName, books, allBooks, onNavigate }) {
 
 export default function SeriesPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [seriesMap, setSeriesMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    const uid = session.user.id
     supabase.from('books')
-      .select('id,title,author_first,author_last,series,series_num,user_books(status,rating)')
+      .select('id,title,author_first,author_last,series,series_num,user_books!inner(status,rating)')
       .not('series', 'is', null)
       .eq('user_books.user_id', uid)
       .order('series_num', { ascending: true })
@@ -107,7 +106,7 @@ export default function SeriesPage() {
         setSeriesMap(map)
         setLoading(false)
       })
-  }, [session])
+  }, [uid])
 
   const allSeries = Object.entries(seriesMap).sort(([a], [b]) => a.localeCompare(b))
 

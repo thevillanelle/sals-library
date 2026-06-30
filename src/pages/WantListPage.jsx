@@ -37,13 +37,11 @@ function BookRow({ book, onMarkRead }) {
 
 export default function WantListPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
-
-  const uid = session.user.id
 
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {

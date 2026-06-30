@@ -42,7 +42,7 @@ function StarPicker({ value, onChange }) {
 
 export default function FillBlanksPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [books, setBooks] = useState([])
   const [idx, setIdx] = useState(0)
   const [fieldIdx, setFieldIdx] = useState(0)
@@ -53,8 +53,6 @@ export default function FillBlanksPage() {
   const [completed, setCompleted] = useState(0)
   const [allDone, setAllDone] = useState(false)
   const [noneFound, setNoneFound] = useState(false)
-
-  const uid = session.user.id
 
   useEffect(() => {
     const load = async () => {

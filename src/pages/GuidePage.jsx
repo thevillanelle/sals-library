@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Shell from '../components/Shell'
-import { BookOpen, BookCheck, Library, HelpCircle, Compass, BarChart2, Layers, Users, Swords, BookMarked, Plus, Star, Pencil } from 'lucide-react'
+import { useApp } from '../context/AppContext'
+import { BookOpen, BookCheck, Library, HelpCircle, Compass, BarChart2, Layers, Users, Swords, BookMarked, Plus, Star, Pencil, Sparkles } from 'lucide-react'
 
 const sections = [
   {
@@ -88,6 +89,7 @@ const sections = [
 
 export default function GuidePage() {
   const navigate = useNavigate()
+  const { appTitle, startOnboarding } = useApp()
   const [open, setOpen] = useState(null)
 
   return (
@@ -97,13 +99,17 @@ export default function GuidePage() {
         {/* Header */}
         <div style={{ marginBottom: 48, paddingBottom: 40, borderBottom: '1px solid var(--border)' }}>
           <p style={{ fontSize: 12, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>Welcome to</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 48, fontWeight: 400, lineHeight: 1.1, marginBottom: 20 }}>Sal's Library</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 48, fontWeight: 400, lineHeight: 1.1, marginBottom: 20 }}>{appTitle}</h1>
           <p style={{ color: 'var(--text2)', fontSize: 17, lineHeight: 1.7, maxWidth: 580 }}>
             This is a private catalogue built for a life spent reading. It holds your entire collection — every book you've read, every series you've followed, every thought you had when you finished something that moved you.
           </p>
           <p style={{ color: 'var(--text2)', fontSize: 17, lineHeight: 1.7, maxWidth: 580, marginTop: 12 }}>
             Below is a guide to everything it can do. Tap any section to read more.
           </p>
+          <button onClick={startOnboarding}
+            style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '9px 16px', color: 'var(--text)', cursor: 'pointer', fontSize: 13 }}>
+            <Sparkles size={14} color="var(--gold)" /> Retake the welcome tour
+          </button>
         </div>
 
         {/* Sections */}

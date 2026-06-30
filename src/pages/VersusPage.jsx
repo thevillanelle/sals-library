@@ -45,7 +45,7 @@ function BookCard({ book, onPick, winner }) {
 
 export default function VersusPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [pool, setPool] = useState([])
   const [left, setLeft] = useState(null)
   const [right, setRight] = useState(null)
@@ -53,7 +53,6 @@ export default function VersusPage() {
   const [winner, setWinner] = useState(null)
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    const uid = session.user.id
     supabase.from('user_books')
       .select('book_id, books(id,title,author_first,author_last,series,series_num,genre,fiction)')
       .eq('user_id', uid)
@@ -64,7 +63,7 @@ export default function VersusPage() {
         if (books.length >= 2) dealPair(books)
         setLoading(false)
       })
-  }, [session])
+  }, [uid])
 
   const dealPair = useCallback((books) => {
     const shuffled = [...books].sort(() => Math.random() - 0.5)

@@ -50,7 +50,7 @@ async function enrichFromOpenLibrary(olKey, subjects, title, authorLast) {
 export default function AddWantPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { session, weather } = useApp()
+  const { weather, uid } = useApp()
   const [query, setQuery] = useState(location.state?.prefill || '')
   const [localResults, setLocalResults] = useState([])
   const [olResults, setOlResults] = useState([])
@@ -63,8 +63,6 @@ export default function AddWantPage() {
   const [saveError, setSaveError] = useState(null)
   const [showManual, setShowManual] = useState(false)
   const [newBook, setNewBook] = useState({ title: '', author_first: '', author_last: '', series: '', series_num: '' })
-
-  const uid = session.user.id
 
   useEffect(() => {
     if (location.state?.prefill) search()

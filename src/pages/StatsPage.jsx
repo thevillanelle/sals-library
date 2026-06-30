@@ -93,12 +93,11 @@ function DonutStat({ label, value, total, color }) {
 
 export default function StatsPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [tab, setTab] = useState('reading')
   const [reading, setReading] = useState(null)
   const [library, setLibrary] = useState(null)
   const [loading, setLoading] = useState(true)
-  const uid = session.user.id
 
   useEffect(() => {
     const load = async () => {

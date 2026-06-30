@@ -147,14 +147,13 @@ async function fetchFromOpenLibrary(title, authorLast) {
 export default function BookPage() {
   const { id: bookId } = useParams()
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [book, setBook] = useState(null)
   const [ub, setUb] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchingDesc, setFetchingDesc] = useState(false)
   const [refreshingSummary, setRefreshingSummary] = useState(false)
   const [removeConfirm, setRemoveConfirm] = useState(false)
-  const uid = session.user.id
 
   useEffect(() => {
     if (!bookId) return

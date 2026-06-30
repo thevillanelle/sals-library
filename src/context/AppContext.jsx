@@ -43,12 +43,18 @@ async function fetchWeather() {
   })
 }
 
+const LIBRARY_OWNER_UID = import.meta.env.VITE_LIBRARY_OWNER_UID
+const LIBRARY_ALIAS_UID = import.meta.env.VITE_LIBRARY_ALIAS_UID
+
 export function AppProvider({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [theme, setTheme] = useState(() => localStorage.getItem('sl-theme') || 'light')
   const [weather, setWeather] = useState(null)
   const [textSize, setTextSize] = useState(() => localStorage.getItem('sl-text-size') || 'md')
+  const [standardView, setStandardView] = useState(() => localStorage.getItem('sl-standard-view') === 'true')
+  const [appTitle, setAppTitleState] = useState("Sal's Library")
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
 
   const TEXT_SIZES = ['sm', 'md', 'lg', 'xl']
   const TEXT_ZOOM = { sm: 0.9, md: 1, lg: 1.15, xl: 1.3 }
@@ -79,10 +85,42 @@ export function AppProvider({ children }) {
     return () => clearInterval(interval)
   }, [])
 
+  const realUid = session?.user?.id
+
+  // Per-person preferences (app title, first-run tour) key off the real
+  // logged-in person, not the aliased library uid — they're about the human,
+  // not the data they happen to be viewing.
+  useEffect(() => {
+    if (!realUid) return
+    const storedTitle = localStorage.getItem(`sl-app-title-${realUid}`)
+    if (storedTitle) setAppTitleState(storedTitle)
+    const seenTour = localStorage.getItem(`sl-onboarded-${realUid}`) === 'true'
+    if (!seenTour) setOnboardingOpen(true)
+  }, [realUid])
+
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
+  const isAliased = !!realUid && !!LIBRARY_ALIAS_UID && realUid === LIBRARY_ALIAS_UID && !!LIBRARY_OWNER_UID
+  const uid = isAliased && !standardView ? LIBRARY_OWNER_UID : realUid
+  const toggleStandardView = () => setStandardView(v => {
+    const next = !v
+    localStorage.setItem('sl-standard-view', next)
+    return next
+  })
+
+  const setAppTitle = (title) => {
+    setAppTitleState(title)
+    if (realUid) localStorage.setItem(`sl-app-title-${realUid}`, title)
+  }
+
+  const dismissOnboarding = () => {
+    setOnboardingOpen(false)
+    if (realUid) localStorage.setItem(`sl-onboarded-${realUid}`, 'true')
+  }
+  const startOnboarding = () => setOnboardingOpen(true)
+
   return (
-    <AppContext.Provider value={{ session, loading, theme, toggleTheme, weather, textSize, textSizeIndex: TEXT_SIZES.indexOf(textSize), setTextSizeByIndex, zoom: TEXT_ZOOM[textSize] || 1 }}>
+    <AppContext.Provider value={{ session, loading, theme, toggleTheme, weather, textSize, textSizeIndex: TEXT_SIZES.indexOf(textSize), setTextSizeByIndex, zoom: TEXT_ZOOM[textSize] || 1, uid, isAliased, standardView, toggleStandardView, appTitle, setAppTitle, onboardingOpen, dismissOnboarding, startOnboarding }}>
       {children}
     </AppContext.Provider>
   )
