@@ -14,7 +14,7 @@ const STATUS_STYLE = {
 export default function AuthorPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { session } = useApp()
+  const { uid } = useApp()
   const { authorFirst, authorLast } = location.state || {}
 
   const [books, setBooks] = useState([])
@@ -22,16 +22,15 @@ export default function AuthorPage() {
 
   useEffect(() => {
     if (!authorLast) { navigate('/library'); return }
-    const uid = session.user.id
     supabase.from('books')
-      .select('id,title,author_first,author_last,series,series_num,genre,fiction,user_books(status,rating,one_thing,date_read)')
+      .select('id,title,author_first,author_last,series,series_num,genre,fiction,user_books!inner(status,rating,one_thing,date_read)')
       .eq('author_last', authorLast)
       .eq('user_books.user_id', uid)
       .order('series', { ascending: true, nullsFirst: false })
       .order('series_num', { ascending: true })
       .order('title', { ascending: true })
       .then(({ data }) => { setBooks(data || []); setLoading(false) })
-  }, [authorLast, session])
+  }, [authorLast, uid])
 
   if (loading) return <Shell showBack><div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)', fontFamily: 'var(--font-serif)', fontSize: 18 }}>Loading…</div></Shell>
 

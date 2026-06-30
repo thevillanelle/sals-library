@@ -121,7 +121,7 @@ function DiscoverSection() {
 
 export default function NextReadPage() {
   const navigate = useNavigate()
-  const { session, weather } = useApp()
+  const { weather, uid } = useApp()
   const [sections, setSections] = useState([])
   const [wantBooks, setWantBooks] = useState([])  // flat list for random pick
   const [avgMap, setAvgMap] = useState({})
@@ -129,8 +129,6 @@ export default function NextReadPage() {
   const [empty, setEmpty] = useState(false)
   const [pick, setPick] = useState(null)
   const [starting, setStarting] = useState(null)
-
-  const uid = session.user.id
 
   useEffect(() => {
     const load = async () => {

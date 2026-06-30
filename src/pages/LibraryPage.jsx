@@ -205,7 +205,7 @@ function groupBySeries(books) {
 
 export default function LibraryPage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { uid } = useApp()
   const [allBooks, setAllBooks] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -228,8 +228,6 @@ export default function LibraryPage() {
   useEffect(() => { sessionStorage.setItem('sl-lib-page', currentPage) }, [currentPage])
 
   const goToBook = (book) => navigate('/book/' + book.id)
-
-  const uid = session.user.id
 
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {

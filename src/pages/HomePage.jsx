@@ -40,7 +40,7 @@ function Tile({ tile, navigate }) {
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { session } = useApp()
+  const { session, uid } = useApp()
   const [stats, setStats] = useState({ total:0, read:0, rated:0, streak:'—' })
   const [onThisDay, setOnThisDay] = useState([])
   const name = session?.user?.user_metadata?.full_name?.split(' ')[0]
@@ -48,7 +48,6 @@ export default function HomePage() {
     || 'Reader'
 
   useEffect(() => {
-    const uid = session.user.id
     const today = new Date()
     const mm = String(today.getMonth() + 1).padStart(2, '0')
     const dd = String(today.getDate()).padStart(2, '0')
@@ -63,7 +62,7 @@ export default function HomePage() {
       setStats({ total:total||0, read:read||0, rated:rated||0, streak:sess?.[0]?.streak_count||'—' })
       setOnThisDay(otd || [])
     })
-  }, [session])
+  }, [uid])
 
   const greeting = () => { const h = new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening' }
 

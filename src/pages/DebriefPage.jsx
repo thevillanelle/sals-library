@@ -26,7 +26,7 @@ const inputStyle = {
 
 export default function DebriefPage() {
   const navigate = useNavigate()
-  const { session, weather } = useApp()
+  const { weather, uid } = useApp()
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState({})
   const [bookSearch, setBookSearch] = useState('')
@@ -77,7 +77,7 @@ export default function DebriefPage() {
     if (!selectedBook) return
     setSaving(true)
     const { error } = await supabase.from('user_books').upsert({
-      user_id: session.user.id,
+      user_id: uid,
       book_id: selectedBook.id,
       status: 'read',
       rating: finalAnswers.rating || null,
