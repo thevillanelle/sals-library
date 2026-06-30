@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
@@ -40,15 +40,22 @@ export default function DebriefPage() {
 
   const q = QUESTIONS[step]
   const progress = (step / QUESTIONS.length) * 100
+  const searchTimer = useRef(null)
 
-  async function searchBooks(val) {
-    setBookSearch(val)
+  async function runBookSearch(val) {
     if (val.length < 2) { setBookResults([]); return }
     const { data } = await supabase.from('books')
       .select('id,title,author_last,author_first,series,series_num')
       .or(`title.ilike.%${val}%,author_last.ilike.%${val}%,author_first.ilike.%${val}%`)
       .limit(8)
     setBookResults(data || [])
+  }
+
+  function searchBooks(val) {
+    setBookSearch(val)
+    clearTimeout(searchTimer.current)
+    if (val.length < 2) { setBookResults([]); return }
+    searchTimer.current = setTimeout(() => runBookSearch(val), 300)
   }
 
   function advance(val) {

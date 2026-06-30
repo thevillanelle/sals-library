@@ -4,14 +4,8 @@ import { supabase } from '../lib/supabase'
 import Shell from '../components/Shell'
 import { useApp } from '../context/AppContext'
 import { Star, BookOpen, ArrowLeft, Trash2, RefreshCw } from 'lucide-react'
+import { statusColors, statusLabels, GENRE_KEYWORDS, deriveGenre, deriveFiction, fetchSummaryFromGoogleBooks } from '../lib/bookUtils'
 
-const statusLabels = { read: 'Read', 'want-to-read': 'Want to read', reading: 'Reading', dnf: 'DNF' }
-const statusColors = {
-  read:          { bg: '#1a3a1a', border: '#2d6b2d', text: '#6dbf6d' },
-  reading:       { bg: '#1a2f3a', border: '#2d5a6b', text: '#6daebf' },
-  'want-to-read':{ bg: '#2a2515', border: '#5a4d1a', text: '#c4a84a' },
-  dnf:           { bg: '#2a1515', border: '#5a2020', text: '#bf6d6d' },
-}
 const genres = ['Biography','Classic','Crime','Fantasy','Historical Fiction','History','Horror','Literary Fiction','Mystery','Nonfiction','Science','Science Fiction','Short Stories','Thriller','Western','Other']
 const formats = ['Hardcover','Paperback','Mass Market Paperback','Ebook','Audiobook','Library']
 
@@ -48,8 +42,30 @@ function Field({ label, children }) {
 function TextInput({ value, onSave, placeholder, multiline }) {
   const [val, setVal] = useState(value || '')
   const [dirty, setDirty] = useState(false)
+  const [saved, setSaved] = useState(false)
   useEffect(() => { setVal(value || ''); setDirty(false) }, [value])
-  const base = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', width: '100%', boxSizing: 'border-box', fontFamily: 'var(--font-sans)', resize: 'vertical' }
+
+  const handleSave = (v) => {
+    onSave(v)
+    setDirty(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }
+
+  const base = {
+    background: 'var(--bg3)',
+    border: `1px solid ${saved ? '#2d6b2d' : 'var(--border)'}`,
+    borderRadius: 'var(--radius)',
+    padding: '8px 12px',
+    color: 'var(--text)',
+    fontSize: 14,
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-sans)',
+    resize: 'vertical',
+    transition: 'border-color 0.3s',
+  }
   const Tag = multiline ? 'textarea' : 'input'
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -58,8 +74,8 @@ function TextInput({ value, onSave, placeholder, multiline }) {
         placeholder={placeholder}
         rows={multiline ? 3 : undefined}
         onChange={e => { setVal(e.target.value); setDirty(true) }}
-        onBlur={() => { if (dirty) { onSave(val); setDirty(false) } }}
-        onKeyDown={e => { if (!multiline && e.key === 'Enter') { onSave(val); setDirty(false); e.target.blur() } }}
+        onBlur={() => { if (dirty) handleSave(val) }}
+        onKeyDown={e => { if (!multiline && e.key === 'Enter') { handleSave(val); e.target.blur() } }}
         style={base}
       />
     </div>
@@ -87,51 +103,6 @@ function Toggle({ value, onSave, labelTrue, labelFalse }) {
       ))}
     </div>
   )
-}
-
-const GENRE_KEYWORDS = [
-  ['Science Fiction',    ['science fiction', 'sci-fi', 'space opera', 'cyberpunk', 'dystopian']],
-  ['Fantasy',            ['fantasy', 'magic', 'dragons', 'wizards', 'sword and sorcery']],
-  ['Horror',             ['horror', 'supernatural fiction', 'ghost stories']],
-  ['Mystery',            ['mystery', 'detective', 'whodunit', 'noir']],
-  ['Thriller',           ['thriller', 'suspense', 'espionage', 'spy']],
-  ['Crime',              ['crime', 'murder', 'heist', 'true crime']],
-  ['Historical Fiction', ['historical fiction', 'historical novel']],
-  ['Literary Fiction',   ['literary fiction', 'psychological fiction']],
-  ['Biography',          ['biography', 'autobiography', 'memoir', 'personal memoirs']],
-  ['History',            ['history', 'world war', 'civil war', 'military history']],
-  ['Science',            ['science', 'natural history', 'evolution', 'physics', 'biology']],
-  ['Adventure',          ['adventure', 'survival', 'exploration']],
-  ['Romance',            ['romance', 'love stories']],
-  ['Classic',            ['classics', '19th century fiction', 'victorian']],
-]
-
-function deriveGenre(subjects) {
-  const lower = subjects.map(s => s.toLowerCase())
-  for (const [genre, keywords] of GENRE_KEYWORDS) {
-    if (keywords.some(k => lower.some(s => s.includes(k)))) return genre
-  }
-  return null
-}
-
-function deriveFiction(subjects) {
-  const lower = subjects.join(' ').toLowerCase()
-  if (/\bnonfiction\b|non-fiction|biography|autobiography|memoir|history|true crime|science|essays/.test(lower)) return false
-  if (/\bfiction\b|novel|stories/.test(lower)) return true
-  return null
-}
-
-async function fetchSummaryFromGoogleBooks(title, authorLast) {
-  try {
-    const q = encodeURIComponent(`intitle:"${title}"${authorLast ? `+inauthor:${authorLast}` : ''}`)
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`)
-    if (!res.ok) return null
-    const data = await res.json()
-    const item = (data.items || []).find(i => (i.volumeInfo?.description?.length || 0) > 60)
-    const desc = item?.volumeInfo?.description
-    if (!desc) return null
-    return desc.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 800)
-  } catch { return null }
 }
 
 async function fetchFromOpenLibrary(title, authorLast) {
@@ -194,19 +165,18 @@ export default function BookPage() {
       setUb(u || {})
       setLoading(false)
 
-      // Auto-populate missing fields from Open Library
       const needsEnrich = b && (!b.summary || !b.genre || b.fiction == null || !b.year_published || !b.page_count)
       if (needsEnrich) {
         setFetchingDesc(true)
         const ol = await fetchFromOpenLibrary(b.title, b.author_last)
         if (ol) {
           const updates = {}
-          if (!b.summary && ol.summary)           updates.summary       = ol.summary
-          if (!b.genre && ol.genre)               updates.genre         = ol.genre
-          if (b.fiction == null && ol.fiction != null) updates.fiction  = ol.fiction
-          if (!b.year_published && ol.year_published) updates.year_published = ol.year_published
-          if (!b.page_count && ol.page_count)     updates.page_count    = ol.page_count
-          if (!b.dewey && ol.dewey)               updates.dewey         = ol.dewey
+          if (!b.summary && ol.summary)                    updates.summary        = ol.summary
+          if (!b.genre && ol.genre)                        updates.genre          = ol.genre
+          if (b.fiction == null && ol.fiction != null)     updates.fiction        = ol.fiction
+          if (!b.year_published && ol.year_published)      updates.year_published = ol.year_published
+          if (!b.page_count && ol.page_count)              updates.page_count     = ol.page_count
+          if (!b.dewey && ol.dewey)                        updates.dewey          = ol.dewey
           if (Object.keys(updates).length > 0) {
             await supabase.from('books').update(updates).eq('id', b.id)
             setBook(prev => ({ ...prev, ...updates }))
@@ -240,7 +210,10 @@ export default function BookPage() {
 
   const saveUb = async (field, value) => {
     setUb(prev => ({ ...prev, [field]: value }))
-    await supabase.from('user_books').update({ [field]: value }).eq('user_id', uid).eq('book_id', bookId)
+    await supabase.from('user_books').upsert(
+      { user_id: uid, book_id: bookId, status: ub?.status || 'read', [field]: value },
+      { onConflict: 'user_id,book_id' }
+    )
   }
 
   if (loading) return (
@@ -275,7 +248,6 @@ export default function BookPage() {
               {book.series && <p style={{ color: 'var(--text3)', fontSize: 13 }}>{book.series}{book.series_num ? ` #${book.series_num}` : ''}</p>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-              {/* Status pill */}
               <select value={ub?.status || 'read'} onChange={e => saveUb('status', e.target.value)}
                 style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 20, padding: '5px 14px', fontSize: 13, color: sc.text, cursor: 'pointer', outline: 'none', fontFamily: 'var(--font-sans)' }}>
                 {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -286,10 +258,11 @@ export default function BookPage() {
         </div>
 
         {/* Summary */}
-        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, marginBottom: 32 }}>
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>About this book</div>
             <button onClick={refreshSummary} disabled={refreshingSummary}
+              aria-label="Refresh description"
               title="Refresh description"
               style={{ background: 'none', border: 'none', cursor: refreshingSummary ? 'default' : 'pointer', color: 'var(--text3)', padding: 2, display: 'flex', alignItems: 'center', opacity: refreshingSummary ? 0.4 : 1 }}>
               <RefreshCw size={11} style={{ animation: refreshingSummary ? 'spin 1s linear infinite' : 'none' }} />
@@ -301,6 +274,46 @@ export default function BookPage() {
               ? <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.7, margin: 0 }}>{book.summary}</p>
               : <p style={{ color: 'var(--text3)', fontSize: 14, fontStyle: 'italic', margin: 0 }}>No description found.</p>
           }
+        </div>
+
+        {/* Debrief — moved above book details so the most personal content leads */}
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', letterSpacing: '0.02em' }}>Debrief</div>
+
+          <Field label="One thing you'll remember">
+            <TextInput value={ub?.one_thing} onSave={v => saveUb('one_thing', v || null)} placeholder="The one lasting impression…" multiline />
+          </Field>
+
+          <Field label="Best moment">
+            <TextInput value={ub?.best_moment} onSave={v => saveUb('best_moment', v || null)} placeholder="A scene, a line, a chapter…" multiline />
+          </Field>
+
+          <Field label="What dragged">
+            <TextInput value={ub?.dragged} onSave={v => saveUb('dragged', v || null)} placeholder="Slow parts or frustrations…" multiline />
+          </Field>
+
+          <Field label="Reminds me of">
+            <TextInput value={ub?.compare} onSave={v => saveUb('compare', v || null)} placeholder="Another book or author…" />
+          </Field>
+
+          <Field label="Recommend?">
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[['yes','Yes'],['maybe','Maybe'],['no','Probably not']].map(([v, l]) => (
+                <button key={v} onClick={() => saveUb('recommend', v)}
+                  style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', border: `1px solid ${ub?.recommend === v ? 'var(--gold)' : 'var(--border)'}`, background: ub?.recommend === v ? 'var(--gold-pale)' : 'var(--bg3)', color: ub?.recommend === v ? 'var(--gold)' : 'var(--text2)' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Memorable passage">
+            <TextInput value={ub?.passage} onSave={v => saveUb('passage', v || null)} placeholder="A sentence or paragraph that stays with you…" multiline />
+          </Field>
+
+          <Field label="Notes">
+            <TextInput value={ub?.notes} onSave={v => saveUb('notes', v || null)} placeholder="Anything you want to remember…" multiline />
+          </Field>
         </div>
 
         {/* Two-column layout */}
@@ -319,7 +332,7 @@ export default function BookPage() {
             </Field>
 
             <Field label="Format">
-              <SelectInput value={book.format} options={formats} onSave={v => saveBook('format', v)} placeholder="Select format…" />
+              <SelectInput value={book.format} options={formats} onSave={v => saveBook('format', v)} placeholder="Select format���" />
             </Field>
 
             <Field label="Year published">
@@ -368,51 +381,11 @@ export default function BookPage() {
             <Field label="Recommended to">
               <TextInput value={ub?.give_to} onSave={v => saveUb('give_to', v || null)} placeholder="Who should read this" />
             </Field>
-
-            <Field label="Private notes">
-              <TextInput value={book.notes} onSave={v => saveBook('notes', v || null)} placeholder="Anything you want to remember…" multiline />
-            </Field>
           </div>
         </div>
 
-        {/* Debrief */}
-        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', letterSpacing: '0.02em' }}>Debrief</div>
-
-          <Field label="One thing you'll remember">
-            <TextInput value={ub?.one_thing} onSave={v => saveUb('one_thing', v || null)} placeholder="The one lasting impression…" multiline />
-          </Field>
-
-          <Field label="Best moment">
-            <TextInput value={ub?.best_moment} onSave={v => saveUb('best_moment', v || null)} placeholder="A scene, a line, a chapter…" multiline />
-          </Field>
-
-          <Field label="What dragged">
-            <TextInput value={ub?.dragged} onSave={v => saveUb('dragged', v || null)} placeholder="Slow parts or frustrations…" multiline />
-          </Field>
-
-          <Field label="Reminds me of">
-            <TextInput value={ub?.compare} onSave={v => saveUb('compare', v || null)} placeholder="Another book or author…" />
-          </Field>
-
-          <Field label="Recommend?">
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[['yes','Yes'],['maybe','Maybe'],['no','Probably not']].map(([v, l]) => (
-                <button key={v} onClick={() => saveUb('recommend', v)}
-                  style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', border: `1px solid ${ub?.recommend === v ? 'var(--gold)' : 'var(--border)'}`, background: ub?.recommend === v ? 'var(--gold-pale)' : 'var(--bg3)', color: ub?.recommend === v ? 'var(--gold)' : 'var(--text2)' }}>
-                  {l}
-                </button>
-              ))}
-            </div>
-          </Field>
-
-          <Field label="Memorable passage">
-            <TextInput value={ub?.passage} onSave={v => saveUb('passage', v || null)} placeholder="A sentence or paragraph that stays with you…" multiline />
-          </Field>
-        </div>
-
         {/* Remove from library */}
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ paddingTop: 24, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
           {removeConfirm ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 13, color: 'var(--text3)' }}>Remove this book from your library?</span>
